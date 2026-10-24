@@ -10,7 +10,7 @@
 # in front of it (Dokploy/Traefik, Caddy, nginx...) before exposing it on the internet.
 services:
   mongo:
-    image: mongo:8.0
+    image: mongo:7.0
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?set MONGO_USER}
@@ -25,7 +25,7 @@ services:
 
   # One gzip archive per day, the last BACKUP_KEEP_DAYS kept (restore: mongorestore --gzip --archive=...).
   mongo-backup:
-    image: mongo:8.0
+    image: mongo:7.0
     restart: unless-stopped
     depends_on:
       mongo:

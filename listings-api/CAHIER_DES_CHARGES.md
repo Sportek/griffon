@@ -13,7 +13,7 @@ l'alimente, et les clients (front, scripts d'analyse, alertes…) l'interrogent.
 |----------------|---------------------------------------------------------------------------|
 | Langage        | Java 17+ (image Docker en Java 21)                                        |
 | Framework      | Spring Boot 4.1, Spring for GraphQL, Spring Data MongoDB                  |
-| Base           | MongoDB 8, en conteneur (`compose.yaml`) **ou** distante via `MONGODB_URI` |
+| Base           | MongoDB 7.0 (la 8.x ne démarre pas sur les noyaux Linux ≥ 6.19, SERVER-121912), en conteneur (`compose.yaml`) **ou** distante via `MONGODB_URI` |
 | API            | GraphQL unique sur `/graphql`, GraphiQL sur `/graphiql`                   |
 | Auth           | Aucune pour l'instant (voir §7)                                           |
 | Supervision    | `/actuator/health`                                                        |
