@@ -3,6 +3,9 @@
 # - No published ports: the Dokploy domain (service "griffon-api", port 8080) routes through Traefik.
 # - Services have project-unique names: Dokploy attaches the routed service to the shared
 #   dokploy-network, where a short name like "mongo" may resolve to another project's container.
+# - Every service joins dokploy-network: on the Dokploy host, traffic between containers of
+#   the stack's own bridge network timed out, while dokploy-network works. MongoDB stays
+#   unpublished and password-protected.
 # - Set the variables in Dokploy's "Environment" tab (see .env.prod.example).
 # - WORKER_REPLICAS=1 runs the scrape worker in the same stack (on a residential-IP server),
 #   0 when the worker runs elsewhere (scraper/compose.worker.yaml, pointed at the API domain).
@@ -15,6 +18,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD}
     volumes:
       - mongo-data:/data/db
+    networks: [dokploy-network]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "-u", "${MONGO_USER}", "-p", "${MONGO_PASSWORD}", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -32,6 +36,7 @@ services:
       KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:
       - mongo-backups:/backup
+    networks: [dokploy-network]
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -49,6 +54,7 @@ services:
         condition: service_healthy
     expose:
       - "8080"
+    networks: [dokploy-network]
     environment:
       MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@griffon-mongo:27017/listings?authSource=admin
       API_KEY: ${API_KEY:?set API_KEY}
@@ -90,6 +96,11 @@ services:
     shm_size: 1gb
     volumes:
       - geo-cache:/app/.cache
+    networks: [dokploy-network]
+
+networks:
+  dokploy-network:
+    external: true
 
 volumes:
   mongo-data:
