@@ -27,8 +27,6 @@ colors:
   status-ink: "#1f2029"
   signal-new: "#00854d"
   signal-drop: "#c2410c"
-  signal-drop-ink: "#c2410c"
-  signal-drop-ink-dark: "#ff9a5c"
   signal-gone: "#676879"
 typography:
   display:
