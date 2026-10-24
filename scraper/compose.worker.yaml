@@ -1,0 +1,20 @@
+# Scrape worker, meant for Gremlin (home server): a residential IP is far less likely to be
+# blocked than a datacenter one. It only makes outgoing calls to the API: nothing to expose.
+#
+#   cp .env.worker.example .env.worker   # then fill it in
+#   docker compose -f compose.worker.yaml up -d --build
+services:
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env.worker
+    # The API stops a run after its running-timeout without a heartbeat; give the
+    # worker time to finish the current run as FAILED on shutdown.
+    stop_grace_period: 30s
+    volumes:
+      - geo-cache:/app/.cache
+    # Chromium needs a bigger /dev/shm than Docker's 64 MB default.
+    shm_size: 1gb
+
+volumes:
+  geo-cache:

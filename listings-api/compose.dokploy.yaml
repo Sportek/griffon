@@ -1,0 +1,95 @@
+# Dokploy deployment (Compose service, source: this repo, compose path: listings-api/compose.dokploy.yaml).
+#
+# - No published ports: the Dokploy domain (service "api", port 8080) routes through Traefik.
+# - Set the variables in Dokploy's "Environment" tab (see .env.prod.example).
+# - WORKER_REPLICAS=1 runs the scrape worker in the same stack (on a residential-IP server),
+#   0 when the worker runs elsewhere (scraper/compose.worker.yaml, pointed at the API domain).
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?set MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "-u", "${MONGO_USER}", "-p", "${MONGO_PASSWORD}", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-backup:
+    image: mongo:8.0
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/listings?authSource=admin
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - mongo-backups:/backup
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          mongodump --uri "$$MONGO_URI" --gzip --archive="/backup/listings-$$(date +%F).gz" \
+            && find /backup -name 'listings-*.gz' -mtime +$$KEEP_DAYS -delete
+          sleep 86400
+        done
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    expose:
+      - "8080"
+    environment:
+      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/listings?authSource=admin
+      API_KEY: ${API_KEY:?set API_KEY}
+      API_KEY_PROTECT_QUERIES: ${API_KEY_PROTECT_QUERIES:-true}
+      GRAPHIQL_ENABLED: ${GRAPHIQL_ENABLED:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      INACTIVITY_STALE_AFTER: ${INACTIVITY_STALE_AFTER:-3d}
+      OPS_WEBHOOK_URL: ${OPS_WEBHOOK_URL:-}
+      OPS_WEBHOOK_FORMAT: ${OPS_WEBHOOK_FORMAT:-JSON}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build: ../scraper
+    restart: unless-stopped
+    deploy:
+      replicas: ${WORKER_REPLICAS:-1}
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      LISTINGS_API_URL: http://api:8080/graphql
+      LISTINGS_API_KEY: ${API_KEY}
+      WORKER_NAME: ${WORKER_NAME:-gremlin}
+      WORKER_SOURCES: ${WORKER_SOURCES:-}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-60}
+      GEOCODER_EMAIL: ${GEOCODER_EMAIL:-}
+      SCRAPER_MIN_DELAY: ${SCRAPER_MIN_DELAY:-2.0}
+      SCRAPER_MAX_DELAY: ${SCRAPER_MAX_DELAY:-5.0}
+      SCRAPER_MAX_REQUESTS: ${SCRAPER_MAX_REQUESTS:-6000}
+      SCRAPER_BLOCK_THRESHOLD: ${SCRAPER_BLOCK_THRESHOLD:-3}
+      SCRAPER_BROWSER_MIN_DELAY: ${SCRAPER_BROWSER_MIN_DELAY:-3.0}
+      SCRAPER_BROWSER_MAX_DELAY: ${SCRAPER_BROWSER_MAX_DELAY:-7.0}
+    stop_grace_period: 30s
+    shm_size: 1gb
+    volumes:
+      - geo-cache:/app/.cache
+
+volumes:
+  mongo-data:
+  mongo-backups:
+  geo-cache:

@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: listings-api
+  mongodb:
+    # Local container by default (docker compose up -d mongo). For a remote cluster,
+    # set MONGODB_URI, e.g. mongodb+srv://user:pass@cluster.example.net/listings
+    uri: ${MONGODB_URI:mongodb://localhost:27017/listings}
+  graphql:
+    graphiql:
+      enabled: ${GRAPHIQL_ENABLED:true}
+    schema:
+      printer:
+        enabled: true
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+
+server:
+  port: ${PORT:8080}
+
+listings:
+  ingest:
+    max-batch-size: 1000
+  inactivity:
+    enabled: ${INACTIVITY_SWEEP_ENABLED:true}
+    sweep-cron: "0 0 * * * *"
+    # A listing not returned by the scraper for this long is flagged inactive.
+    stale-after: ${INACTIVITY_STALE_AFTER:3d}
+    # Per-source overrides, e.g. for sources scraped less often:
+    # stale-after-by-source:
+    #   realtor_ca: 7d
+  scheduler:
+    # Turns due scrapeSchedules into QUEUED runs for the workers (checked every minute).
+    enabled: ${SCHEDULER_ENABLED:true}
+  runs:
+    # A RUNNING run without batch/heartbeat for this long is failed (worker crashed).
+    running-timeout: ${RUN_RUNNING_TIMEOUT:30m}
+    # A QUEUED run no worker claimed within this delay is failed (no worker up).
+    queued-timeout: ${RUN_QUEUED_TIMEOUT:6h}
+  ops:
+    # Optional: notified when a scrape fails (blocked source, dead worker...). JSON, SLACK or DISCORD.
+    webhook-url: ${OPS_WEBHOOK_URL:}
+    webhook-format: ${OPS_WEBHOOK_FORMAT:JSON}
+  security:
+    # When set, mutations require the header X-API-Key: <value>.
+    api-key: ${API_KEY:}
+    protect-queries: ${API_KEY_PROTECT_QUERIES:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

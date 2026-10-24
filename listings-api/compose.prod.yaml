@@ -1,0 +1,98 @@
+# Production stack: MongoDB (authenticated, never published) + daily backups + API.
+#
+#   cp .env.prod.example .env.prod   # then fill it in
+#   docker compose -f compose.prod.yaml --env-file .env.prod up -d --build
+#
+# Everything on one host (e.g. Gremlin): add the scrape worker from ../scraper with
+#   docker compose -f compose.prod.yaml --env-file .env.prod --profile worker up -d --build
+#
+# The API only listens on API_BIND (127.0.0.1 by default): put a reverse proxy with HTTPS
+# in front of it (Dokploy/Traefik, Caddy, nginx...) before exposing it on the internet.
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?set MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "-u", "${MONGO_USER}", "-p", "${MONGO_PASSWORD}", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # One gzip archive per day, the last BACKUP_KEEP_DAYS kept (restore: mongorestore --gzip --archive=...).
+  mongo-backup:
+    image: mongo:8.0
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/listings?authSource=admin
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ${BACKUP_DIR:-./backups}:/backup
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          mongodump --uri "$$MONGO_URI" --gzip --archive="/backup/listings-$$(date +%F).gz" \
+            && find /backup -name 'listings-*.gz' -mtime +$$KEEP_DAYS -delete
+          sleep 86400
+        done
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-8080}:8080"
+    environment:
+      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/listings?authSource=admin
+      API_KEY: ${API_KEY:?set API_KEY}
+      API_KEY_PROTECT_QUERIES: ${API_KEY_PROTECT_QUERIES:-true}
+      GRAPHIQL_ENABLED: ${GRAPHIQL_ENABLED:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      INACTIVITY_STALE_AFTER: ${INACTIVITY_STALE_AFTER:-3d}
+      OPS_WEBHOOK_URL: ${OPS_WEBHOOK_URL:-}
+      OPS_WEBHOOK_FORMAT: ${OPS_WEBHOOK_FORMAT:-JSON}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    profiles: ["worker"]
+    build: ../scraper
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      LISTINGS_API_URL: http://api:8080/graphql
+      LISTINGS_API_KEY: ${API_KEY}
+      WORKER_NAME: ${WORKER_NAME:-gremlin}
+      WORKER_SOURCES: ${WORKER_SOURCES:-}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-60}
+      GEOCODER_EMAIL: ${GEOCODER_EMAIL:-}
+      SCRAPER_MIN_DELAY: ${SCRAPER_MIN_DELAY:-2.0}
+      SCRAPER_MAX_DELAY: ${SCRAPER_MAX_DELAY:-5.0}
+      SCRAPER_MAX_REQUESTS: ${SCRAPER_MAX_REQUESTS:-6000}
+      SCRAPER_BLOCK_THRESHOLD: ${SCRAPER_BLOCK_THRESHOLD:-3}
+      SCRAPER_BROWSER_MIN_DELAY: ${SCRAPER_BROWSER_MIN_DELAY:-3.0}
+      SCRAPER_BROWSER_MAX_DELAY: ${SCRAPER_BROWSER_MAX_DELAY:-7.0}
+    stop_grace_period: 30s
+    shm_size: 1gb
+    volumes:
+      - geo-cache:/app/.cache
+
+volumes:
+  mongo-data:
+  geo-cache:

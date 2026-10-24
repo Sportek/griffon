@@ -1,0 +1,514 @@
+"Date-heure ISO-8601 (ex: 2026-08-05T02:34:43.741Z). Les offsets (+00:00) sont acceptés en entrée."
+scalar DateTime
+
+"Valeur JSON libre (objet, tableau ou scalaire), stockée telle quelle."
+scalar JSON
+
+type Query {
+    "Un listing par son id MongoDB."
+    listing(id: ID!): Listing
+    "Un listing par sa clé naturelle (source + id externe)."
+    listingByKey(source: String!, externalId: String!): Listing
+
+    "Recherche paginée avec filtres et tri."
+    listings(filter: ListingFilter, sort: ListingSort = NEWEST, page: Int = 0, size: Int = 20): ListingPage!
+
+    "Les listings découverts le plus récemment (firstSeenAt décroissant)."
+    latestListings(limit: Int = 20, since: DateTime, filter: ListingFilter): [Listing!]!
+
+    "Statistiques agrégées (prix, répartition par source/ville/taille) sur un sous-ensemble filtré."
+    listingStats(filter: ListingFilter): ListingStats!
+
+    "Valeurs distinctes connues, utiles pour construire des filtres côté client."
+    filterOptions: FilterOptions!
+
+    "Une exécution du scraper."
+    ingestionRun(id: ID!): IngestionRun
+    "Historique des exécutions du scraper, les plus récentes en premier."
+    ingestionRuns(source: String, status: IngestionRunStatus, limit: Int = 20): [IngestionRun!]!
+    "Plannings de scraping (un par source)."
+    scrapeSchedules: [ScrapeSchedule!]!
+
+    savedSearch(id: ID!): SavedSearch
+    savedSearches: [SavedSearch!]!
+    "Alertes générées par les recherches sauvegardées, les plus récentes en premier."
+    alerts(savedSearchId: ID, since: DateTime, limit: Int = 50): [Alert!]!
+}
+
+type Mutation {
+    """
+    Point d'entrée du scraper. Insère ou met à jour les listings par (source, externalId).
+    Idempotent : renvoyer le même listing ne fait que rafraîchir lastSeenAt/seenCount.
+    Avec runId, les compteurs sont ajoutés à cette exécution (voir startIngestionRun).
+    """
+    upsertListings(listings: [ListingInput!]!, runId: ID): IngestReport!
+
+    "Supprime un listing par son id. Renvoie false s'il n'existait pas."
+    deleteListing(id: ID!): Boolean!
+
+    "Démarre une exécution du scraper pour une source."
+    startIngestionRun(source: String!): IngestionRun!
+    """
+    Termine une exécution. Avec markUnseenInactive (et status SUCCEEDED), les listings de la source
+    qui n'ont pas été revus pendant l'exécution sont marqués inactifs : à réserver aux scrapes complets.
+    """
+    finishIngestionRun(id: ID!, status: IngestionRunStatus!, error: String, markUnseenInactive: Boolean = false): IngestionRun!
+
+    "Lance immédiatement la détection des listings inactifs (normalement planifiée). Renvoie le nombre désactivé."
+    sweepInactiveListings: Int!
+
+    "Crée ou remplace le planning d'une source."
+    saveScrapeSchedule(input: ScrapeScheduleInput!): ScrapeSchedule!
+    deleteScrapeSchedule(source: String!): Boolean!
+    "Met une exécution en file d'attente tout de suite (refusé si la source a déjà une exécution en cours)."
+    triggerScrape(source: String!, params: ScrapeParamsInput): IngestionRun!
+    "Exécute immédiatement le tour du planificateur (normalement chaque minute). Renvoie le nombre d'exécutions mises en file."
+    runSchedulerTick: Int!
+
+    "Worker : réclame la plus ancienne exécution en file (optionnellement parmi sources). null s'il n'y a rien à faire."
+    claimIngestionRun(worker: String!, sources: [String!]): IngestionRun
+    "Worker : signe de vie pendant une longue exécution (sinon elle est échouée après listings.runs.running-timeout)."
+    heartbeatIngestionRun(id: ID!): Boolean!
+
+    createSavedSearch(input: SavedSearchInput!): SavedSearch!
+    updateSavedSearch(id: ID!, input: SavedSearchInput!): SavedSearch!
+    deleteSavedSearch(id: ID!): Boolean!
+}
+
+enum ListingType { RENT, SALE, UNKNOWN }
+enum PricePeriod { MONTHLY, YEARLY, UNKNOWN }
+
+enum ListingSort {
+    "Découverts le plus récemment en premier."
+    NEWEST
+    OLDEST
+    PRICE_ASC
+    PRICE_DESC
+    AREA_DESC
+    "Dernier changement de contenu (prix, description...) en premier."
+    RECENTLY_UPDATED
+    "Vus le plus récemment par le scraper en premier."
+    RECENTLY_SEEN
+}
+
+type Listing {
+    id: ID!
+    source: String!
+    externalId: String!
+    url: String!
+
+    title: String
+    listingType: ListingType!
+    "apartment, condo, house, studio, room, duplex-triplex..."
+    propertyType: String
+
+    price: Float
+    priceCurrency: String
+    pricePeriod: PricePeriod!
+
+    address: String
+    neighborhood: String
+    city: String
+    region: String
+    postalCode: String
+    country: String
+    latitude: Float
+    longitude: Float
+    "exact, approximate, geocoded_address, geocoded_postal_code, geocoded_city"
+    locationPrecision: String
+
+    bedrooms: Float
+    bathrooms: Float
+    areaSqft: Float
+    "Convention québécoise : le X de « X 1/2 »."
+    roomsQc: Float
+    yearBuilt: Int
+    parkingSpots: Int
+
+    furnished: Boolean
+    petsAllowed: Boolean
+    smokingAllowed: Boolean
+    availableDate: String
+    leaseTerm: String
+
+    amenities: [String!]!
+    utilitiesIncluded: [String!]!
+    photos: [String!]!
+    description: String
+
+    contactName: String
+    agencyName: String
+    "Date de publication telle que fournie par la source."
+    publishedAt: String
+
+    "Champs propres à la source, non normalisés."
+    extra: JSON
+    "Enrichissement de proximité du scraper (métro, REM, commerces), tel quel."
+    proximity: JSON
+    "Minutes de marche jusqu'au métro le plus proche (extrait de proximity)."
+    metroWalkMinutes: Float
+    "Minutes de marche jusqu'à la station REM la plus proche (extrait de proximity)."
+    remWalkMinutes: Float
+
+    "Date de scraping fournie par le scraper lors du dernier envoi."
+    scrapedAt: DateTime
+    "Première fois que l'API a reçu ce listing."
+    firstSeenAt: DateTime!
+    "Dernière fois que le scraper l'a renvoyé (même sans changement)."
+    lastSeenAt: DateTime!
+    "Dernier changement de contenu."
+    updatedAt: DateTime!
+    "Nombre de fois où le scraper a envoyé ce listing."
+    seenCount: Int!
+    "Historique des prix observés (une entrée par changement)."
+    priceHistory: [PricePoint!]!
+
+    "false quand le scraper ne le voit plus (retiré du site, loué...)."
+    active: Boolean!
+    inactiveSince: DateTime
+
+    "Si ce listing est un doublon d'une annonce d'une autre source : l'annonce de référence."
+    duplicateOf: Listing
+    "Les autres annonces du même groupe de doublons (même adresse, mêmes chambres, prix proche)."
+    duplicates: [Listing!]!
+}
+
+type PricePoint {
+    price: Float
+    observedAt: DateTime!
+}
+
+type ListingPage {
+    content: [Listing!]!
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+    hasNext: Boolean!
+}
+
+input ListingFilter {
+    sources: [String!]
+    "Correspondance exacte, insensible à la casse et aux accents."
+    cities: [String!]
+    "Correspondance exacte, insensible à la casse et aux accents."
+    neighborhoods: [String!]
+    region: String
+    "Préfixe du code postal, ex: \"H2\" ou \"G1W\"."
+    postalCodePrefix: String
+    listingType: ListingType
+    propertyTypes: [String!]
+
+    minPrice: Float
+    maxPrice: Float
+    minBedrooms: Float
+    maxBedrooms: Float
+    minBathrooms: Float
+    minRoomsQc: Float
+    maxRoomsQc: Float
+    minAreaSqft: Float
+    maxAreaSqft: Float
+    minYearBuilt: Int
+    minParkingSpots: Int
+
+    furnished: Boolean
+    petsAllowed: Boolean
+    smokingAllowed: Boolean
+    "Le listing doit contenir TOUTES ces commodités (insensible à la casse)."
+    amenities: [String!]
+    "Le listing doit inclure TOUS ces services (insensible à la casse)."
+    utilitiesIncluded: [String!]
+    hasPhotos: Boolean
+
+    "Recherche plein texte sur titre, adresse, quartier, ville et description."
+    text: String
+
+    firstSeenAfter: DateTime
+    firstSeenBefore: DateTime
+    lastSeenAfter: DateTime
+
+    "true = seulement les annonces encore en ligne, false = seulement les retirées."
+    active: Boolean
+    "Masque les doublons inter-sources (ne garde que l'annonce de référence de chaque groupe)."
+    excludeDuplicates: Boolean
+
+    near: GeoFilter
+    maxMetroWalkMinutes: Float
+    maxRemWalkMinutes: Float
+    "Métro OU REM à moins de N minutes."
+    maxTransitWalkMinutes: Float
+    "Catégories de commerces/services qui doivent toutes être à distance de marche (ex: grocery, pharmacy)."
+    nearbyCategories: [String!]
+}
+
+input GeoFilter {
+    latitude: Float!
+    longitude: Float!
+    radiusKm: Float!
+}
+
+input ListingInput {
+    source: String!
+    externalId: String!
+    url: String!
+
+    title: String
+    listingType: ListingType = RENT
+    propertyType: String
+
+    price: Float
+    priceCurrency: String
+    pricePeriod: PricePeriod = MONTHLY
+
+    address: String
+    neighborhood: String
+    city: String
+    region: String
+    postalCode: String
+    country: String
+    latitude: Float
+    longitude: Float
+    locationPrecision: String
+
+    bedrooms: Float
+    bathrooms: Float
+    areaSqft: Float
+    roomsQc: Float
+    yearBuilt: Int
+    parkingSpots: Int
+
+    furnished: Boolean
+    petsAllowed: Boolean
+    smokingAllowed: Boolean
+    availableDate: String
+    leaseTerm: String
+
+    amenities: [String!]
+    utilitiesIncluded: [String!]
+    photos: [String!]
+    description: String
+
+    contactName: String
+    agencyName: String
+    publishedAt: String
+
+    extra: JSON
+    proximity: JSON
+
+    scrapedAt: DateTime
+}
+
+enum IngestStatus { CREATED, UPDATED, UNCHANGED, REJECTED }
+
+type IngestResult {
+    source: String!
+    externalId: String!
+    status: IngestStatus!
+    "Raison du rejet quand status = REJECTED."
+    error: String
+}
+
+type IngestReport {
+    received: Int!
+    created: Int!
+    updated: Int!
+    unchanged: Int!
+    "Listings invalides ignorés (les autres du lot sont quand même enregistrés)."
+    rejected: Int!
+    results: [IngestResult!]!
+}
+
+enum IngestionRunStatus {
+    "En attente d'un worker (planning ou triggerScrape)."
+    QUEUED
+    RUNNING
+    SUCCEEDED
+    FAILED
+}
+
+type IngestionRun {
+    id: ID!
+    source: String!
+    status: IngestionRunStatus!
+    "cli, schedule ou manual."
+    trigger: String
+    "Options transmises au worker."
+    params: ScrapeParams
+    queuedAt: DateTime
+    startedAt: DateTime
+    "Worker qui exécute ce run."
+    worker: String
+    finishedAt: DateTime
+    "Dernier lot reçu : utile pour repérer un scraper bloqué (RUNNING sans activité)."
+    lastBatchAt: DateTime
+    batches: Int!
+    received: Int!
+    created: Int!
+    updated: Int!
+    unchanged: Int!
+    rejected: Int!
+    "Listings marqués inactifs à la fin de l'exécution (markUnseenInactive)."
+    deactivated: Int!
+    error: String
+}
+
+type ListingStats {
+    count: Int!
+    avgPrice: Float
+    minPrice: Float
+    maxPrice: Float
+    bySource: [StatsBucket!]!
+    byCity: [StatsBucket!]!
+    byRoomsQc: [StatsBucket!]!
+}
+
+type StatsBucket {
+    key: String
+    count: Int!
+    avgPrice: Float
+    minPrice: Float
+    maxPrice: Float
+}
+
+type FilterOptions {
+    sources: [String!]!
+    cities: [String!]!
+    neighborhoods: [String!]!
+    regions: [String!]!
+    propertyTypes: [String!]!
+    amenities: [String!]!
+    utilitiesIncluded: [String!]!
+}
+
+enum WebhookFormat {
+    "{ savedSearch, alerts: [{ reason, listing }] }"
+    JSON
+    "{ text } : webhook entrant Slack."
+    SLACK
+    "{ content } : webhook Discord."
+    DISCORD
+}
+
+input SavedSearchInput {
+    name: String!
+    filter: ListingFilter!
+    "Optionnel : sans webhook, les alertes restent consultables via la requête alerts."
+    webhookUrl: String
+    webhookFormat: WebhookFormat = JSON
+    "Alerter aussi quand le prix d'une annonce correspondante baisse."
+    notifyOnPriceDrop: Boolean = false
+    enabled: Boolean = true
+}
+
+type SavedSearch {
+    id: ID!
+    name: String!
+    filter: SavedFilter!
+    webhookUrl: String
+    webhookFormat: WebhookFormat!
+    notifyOnPriceDrop: Boolean!
+    enabled: Boolean!
+    createdAt: DateTime!
+    lastAlertAt: DateTime
+    "Annonces actuellement correspondantes."
+    matches(page: Int = 0, size: Int = 20): ListingPage!
+}
+
+"Copie en lecture du ListingFilter enregistré (GraphQL interdit de réutiliser un input en sortie)."
+type SavedFilter {
+    sources: [String!]
+    cities: [String!]
+    neighborhoods: [String!]
+    region: String
+    postalCodePrefix: String
+    listingType: ListingType
+    propertyTypes: [String!]
+    minPrice: Float
+    maxPrice: Float
+    minBedrooms: Float
+    maxBedrooms: Float
+    minBathrooms: Float
+    minRoomsQc: Float
+    maxRoomsQc: Float
+    minAreaSqft: Float
+    maxAreaSqft: Float
+    minYearBuilt: Int
+    minParkingSpots: Int
+    furnished: Boolean
+    petsAllowed: Boolean
+    smokingAllowed: Boolean
+    amenities: [String!]
+    utilitiesIncluded: [String!]
+    hasPhotos: Boolean
+    text: String
+    firstSeenAfter: DateTime
+    firstSeenBefore: DateTime
+    lastSeenAfter: DateTime
+    active: Boolean
+    excludeDuplicates: Boolean
+    near: SavedGeoFilter
+    maxMetroWalkMinutes: Float
+    maxRemWalkMinutes: Float
+    maxTransitWalkMinutes: Float
+    nearbyCategories: [String!]
+}
+
+type SavedGeoFilter {
+    latitude: Float!
+    longitude: Float!
+    radiusKm: Float!
+}
+
+enum AlertReason { NEW_LISTING, PRICE_DROP }
+enum DeliveryStatus { NONE, PENDING, SENT, FAILED }
+
+type Alert {
+    id: ID!
+    savedSearch: SavedSearch
+    listing: Listing
+    reason: AlertReason!
+    "Pour PRICE_DROP : prix avant la baisse."
+    previousPrice: Float
+    price: Float
+    createdAt: DateTime!
+    delivery: DeliveryStatus!
+    deliveryError: String
+}
+
+type ScrapeParams {
+    maxPages: Int
+    areas: [String!]
+    limit: Int
+    enrich: Boolean!
+    "Désactiver en fin d'exécution ce qui n'a pas été revu (scrape complet uniquement)."
+    markUnseenInactive: Boolean!
+}
+
+input ScrapeParamsInput {
+    maxPages: Int
+    areas: [String!]
+    limit: Int
+    enrich: Boolean = false
+    markUnseenInactive: Boolean = false
+}
+
+type ScrapeSchedule {
+    id: ID!
+    source: String!
+    "Cron Spring à 6 champs : seconde minute heure jour mois jour-de-semaine (ex: \"0 30 3 * * *\" = tous les jours à 3 h 30)."
+    cron: String!
+    timeZone: String!
+    enabled: Boolean!
+    params: ScrapeParams!
+    nextRunAt: DateTime
+    lastQueuedAt: DateTime
+}
+
+input ScrapeScheduleInput {
+    source: String!
+    cron: String!
+    "Défaut : America/Toronto."
+    timeZone: String
+    enabled: Boolean = true
+    params: ScrapeParamsInput
+}
