@@ -58,5 +58,4 @@ jobs:
         run: |
           docker compose -f listings-api/compose.prod.yaml config -q
           docker compose -f listings-api/compose.dokploy.yaml config -q
-          cp scraper/.env.worker.example scraper/.env.worker
-          docker compose -f scraper/compose.worker.yaml config -q
+          docker compose -f scraper/compose.worker.yaml --env-file scraper/.env.worker.example config -q

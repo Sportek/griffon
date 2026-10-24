@@ -104,7 +104,7 @@ tourner derrière une box (IP résidentielle, beaucoup moins bloquée qu'une IP 
 
 ```bash
 cp .env.worker.example .env.worker      # URL + clé de l'API, nom du worker
-docker compose -f compose.worker.yaml up -d --build
+docker compose -f compose.worker.yaml --env-file .env.worker up -d --build
 # ou sans Docker :
 LISTINGS_API_URL=... LISTINGS_API_KEY=... python -m scraper.worker
 ```

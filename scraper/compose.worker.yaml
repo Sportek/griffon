@@ -1,14 +1,28 @@
 # Scrape worker, meant for Gremlin (home server): a residential IP is far less likely to be
 # blocked than a datacenter one. It only makes outgoing calls to the API: nothing to expose.
 #
-#   cp .env.worker.example .env.worker   # then fill it in
-#   docker compose -f compose.worker.yaml up -d --build
+# Dokploy: Compose service on this repo, compose path scraper/compose.worker.yaml,
+#          variables in the Environment tab.
+# By hand: cp .env.worker.example .env.worker   # then fill it in
+#          docker compose -f compose.worker.yaml --env-file .env.worker up -d --build
 services:
   worker:
     build: .
     restart: unless-stopped
-    env_file: .env.worker
-    # The API stops a run after its running-timeout without a heartbeat; give the
+    environment:
+      LISTINGS_API_URL: ${LISTINGS_API_URL:?set LISTINGS_API_URL}
+      LISTINGS_API_KEY: ${LISTINGS_API_KEY:?set LISTINGS_API_KEY}
+      WORKER_NAME: ${WORKER_NAME:-gremlin}
+      WORKER_SOURCES: ${WORKER_SOURCES:-}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-60}
+      GEOCODER_EMAIL: ${GEOCODER_EMAIL:-}
+      SCRAPER_MIN_DELAY: ${SCRAPER_MIN_DELAY:-2.0}
+      SCRAPER_MAX_DELAY: ${SCRAPER_MAX_DELAY:-5.0}
+      SCRAPER_MAX_REQUESTS: ${SCRAPER_MAX_REQUESTS:-6000}
+      SCRAPER_BLOCK_THRESHOLD: ${SCRAPER_BLOCK_THRESHOLD:-3}
+      SCRAPER_BROWSER_MIN_DELAY: ${SCRAPER_BROWSER_MIN_DELAY:-3.0}
+      SCRAPER_BROWSER_MAX_DELAY: ${SCRAPER_BROWSER_MAX_DELAY:-7.0}
+    # The API fails a run after its running-timeout without a heartbeat; give the
     # worker time to finish the current run as FAILED on shutdown.
     stop_grace_period: 30s
     volumes:
