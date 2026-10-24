@@ -172,12 +172,14 @@ export function AlertsView({ searches, alerts, error }: { searches: SavedSearch[
               <ul className={styles.feedList}>
                 {items.map((alert) => (
                   <li key={alert.id}>
-                    <p className={styles.reason}>
-                      {alert.reason === "PRICE_DROP"
-                        ? `Baisse de prix : ${formatPrice(alert.previousPrice)} → ${formatPrice(alert.price)}`
-                        : "Nouvelle annonce"}
-                      {alert.savedSearch && searches.length > 1 && <> · {alert.savedSearch.name}</>}
-                    </p>
+                    {(alert.reason === "PRICE_DROP" || searches.length > 1) && (
+                      <p className={styles.reason}>
+                        {alert.reason === "PRICE_DROP"
+                          ? `Baisse de prix : ${formatPrice(alert.previousPrice)} → ${formatPrice(alert.price)}`
+                          : "Nouvelle annonce"}
+                        {alert.savedSearch && searches.length > 1 && <> · {alert.savedSearch.name}</>}
+                      </p>
+                    )}
                     <ListingCard listing={alert.listing!} />
                   </li>
                 ))}
