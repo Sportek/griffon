@@ -85,8 +85,26 @@
   font-size: 11px;
 }
 
+/* On a phone the bottom edge belongs to the Liste/Carte toggle. */
 @media (max-width: 767px) {
   .legend {
-    display: none;
+    top: 56px;
+    bottom: auto;
+    padding: 4px 8px;
+    font-size: 11px;
   }
+}
+
+/* MapLibre draws its control glyphs dark: lighten them on Vibe's dark theme. */
+:global(.dark-app-theme) .wrapper :global(.maplibregl-ctrl-icon) {
+  filter: invert(1);
+}
+
+:global(.dark-app-theme) .wrapper :global(.maplibregl-ctrl-attrib) {
+  background: var(--primary-background-color);
+  color: var(--secondary-text-color);
+}
+
+:global(.dark-app-theme) .wrapper :global(.maplibregl-ctrl-attrib a) {
+  color: var(--secondary-text-color);
 }

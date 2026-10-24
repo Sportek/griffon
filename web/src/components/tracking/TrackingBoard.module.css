@@ -51,6 +51,7 @@
   overflow-x: auto;
   align-items: start;
   scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--gutter);
 }
 
 .column {
@@ -86,6 +87,16 @@
   color: #1f2029;
 }
 
+.columnEmpty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--layout-border-color);
+  border-radius: var(--border-radius-medium);
+  color: var(--secondary-text-color);
+  font-size: 13px;
+  text-align: center;
+}
+
 .columnCount {
   font-weight: 500;
   opacity: 0.85;
@@ -108,8 +119,17 @@
   padding: 16px var(--gutter) 48px;
 }
 
+/* On a phone the columns stack as status groups, and empty ones step aside so the
+   followed listings are in the first screen. */
 @media (max-width: 767px) {
   .board {
-    grid-auto-columns: 84vw;
+    grid-auto-flow: row;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    overflow-x: visible;
+  }
+
+  .column[data-empty] {
+    display: none;
   }
 }

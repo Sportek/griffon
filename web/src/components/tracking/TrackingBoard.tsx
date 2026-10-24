@@ -115,7 +115,13 @@ export function TrackingBoard({
       ) : tab === 0 ? (
         <div className={styles.board} role="list" aria-label="Annonces par statut">
           {columns.map((column) => (
-            <section key={column.key} className={styles.column} role="listitem" aria-label={column.label}>
+            <section
+              key={column.key}
+              className={styles.column}
+              role="listitem"
+              aria-label={column.label}
+              data-empty={column.items.length === 0 || undefined}
+            >
               <header
                 className={styles.columnHeader}
                 style={column.color ? { background: column.color } : undefined}
@@ -124,6 +130,7 @@ export function TrackingBoard({
                 <span>{column.label}</span>
                 <span className={styles.columnCount}>{column.items.length}</span>
               </header>
+              {column.items.length === 0 && <p className={styles.columnEmpty}>Aucune annonce</p>}
               <ul className={styles.columnItems}>
                 {column.items.map((item) => (
                   <li key={item.tracking.listingId}>

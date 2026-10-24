@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Dropdown } from "@vibe/core";
+import { Button } from "@vibe/core";
 import { Show } from "@vibe/icons";
 
-import { formatDateTime, formatPrice, formatRent, formatSize, sourceName, STATUSES } from "@/lib/format";
+import { formatDateTime, formatPrice, formatRent, formatSize, sourceName } from "@/lib/format";
 import type { TrackedListing, TrackingStatus } from "@/lib/types";
 import { FavoriteButton } from "../FavoriteButton";
-import { ClientOnly } from "../ClientOnly";
-import { StatusPill } from "../StatusPill";
+import { StatusSelect } from "../StatusSelect";
 import styles from "./TrackedCard.module.css";
-
-type StatusOption = { value: TrackingStatus; label: string };
-const OPTIONS: StatusOption[] = STATUSES.map((s) => ({ value: s.value, label: s.label }));
 
 /** What changed on a followed listing since it was saved: removed, or a new price. */
 function changes(item: TrackedListing): string[] {
@@ -74,20 +70,7 @@ export function TrackedCard({
 
         {onMove && (
           <div className={styles.status}>
-            <ClientOnly fallback={<StatusPill status={tracking.status} size="small" />}>
-              <Dropdown
-                size="small"
-                aria-label="Statut de la démarche"
-                placeholder="Sans statut"
-                options={OPTIONS}
-                value={OPTIONS.find((o) => o.value === tracking.status)}
-                clearable
-                optionRenderer={(o: StatusOption) => <StatusPill status={o.value} size="small" />}
-                valueRenderer={(o: StatusOption) => <StatusPill status={o.value} size="small" />}
-                onChange={(o: StatusOption | null) => onMove(o?.value ?? null)}
-                onClear={() => onMove(null)}
-              />
-            </ClientOnly>
+            <StatusSelect value={tracking.status} onChange={onMove} size="small" />
           </div>
         )}
         {onUnhide && (

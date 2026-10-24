@@ -176,7 +176,7 @@ export function AlertsView({ searches, alerts, error }: { searches: SavedSearch[
                       {alert.reason === "PRICE_DROP"
                         ? `Baisse de prix : ${formatPrice(alert.previousPrice)} → ${formatPrice(alert.price)}`
                         : "Nouvelle annonce"}
-                      {alert.savedSearch && <> · {alert.savedSearch.name}</>}
+                      {alert.savedSearch && searches.length > 1 && <> · {alert.savedSearch.name}</>}
                     </p>
                     <ListingCard listing={alert.listing!} />
                   </li>

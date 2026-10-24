@@ -2,21 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Dropdown, TextArea, TextField } from "@vibe/core";
+import { Button, TextArea, TextField } from "@vibe/core";
 import { Hide, Show } from "@vibe/icons";
 
 import { saveTracking } from "@/app/actions";
 import type { TrackingInput } from "@/lib/api";
-import { STATUSES } from "@/lib/format";
 import type { Tracking, TrackingStatus } from "@/lib/types";
 import { FavoriteButton } from "../FavoriteButton";
-import { ClientOnly } from "../ClientOnly";
-import { StatusPill } from "../StatusPill";
+import { StatusSelect } from "../StatusSelect";
 import { useToast } from "../ToastProvider";
 import styles from "./TrackingPanel.module.css";
-
-type StatusOption = { value: TrackingStatus; label: string };
-const OPTIONS: StatusOption[] = STATUSES.map((s) => ({ value: s.value, label: s.label }));
 
 /** "2026-10-24T18:30" for a datetime-local input, in the browser's time zone. */
 function toLocalInput(iso: string | null): string {
@@ -57,32 +52,20 @@ export function TrackingPanel({ listingId, tracking }: { listingId: string; trac
       </div>
 
       <div className={styles.field}>
-        <span className={styles.label} id="status-label">
+        <span className={styles.label}>
           Statut
         </span>
-        <ClientOnly fallback={<StatusPill status={status} size="small" />}>
-          <Dropdown
-            aria-label="Statut de la démarche"
-            placeholder="Choisir un statut"
-            options={OPTIONS}
-            value={OPTIONS.find((o) => o.value === status)}
-            clearable
-            optionRenderer={(o: StatusOption) => <StatusPill status={o.value} size="small" />}
-            valueRenderer={(o: StatusOption) => <StatusPill status={o.value} size="small" />}
-            onChange={(o: StatusOption | null) => {
-              setStatus(o?.value ?? null);
-              save(o ? { status: o.value } : { clearStatus: true });
-            }}
-            onClear={() => {
-              setStatus(null);
-              save({ clearStatus: true });
-            }}
-          />
-        </ClientOnly>
+        <StatusSelect
+          value={status}
+          onChange={(next) => {
+            setStatus(next);
+            save(next ? { status: next } : { clearStatus: true });
+          }}
+        />
       </div>
 
       <TextField
-        title="Visite"
+        title="Date et heure de la visite"
         type="datetime-local"
         value={visit}
         size="medium"

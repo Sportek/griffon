@@ -17,6 +17,7 @@ import {
   sourceName,
 } from "@/lib/format";
 import type { ListingDetail, NearbyStation, PriceBenchmark } from "@/lib/types";
+import { Description } from "@/components/listing/Description";
 import { Gallery } from "@/components/listing/Gallery";
 import { PriceHistory } from "@/components/listing/PriceHistory";
 import { TrackingPanel } from "@/components/listing/TrackingPanel";
@@ -230,14 +231,16 @@ export default async function ListingPage({ params }: Params) {
               <h2 id="description-heading" className={styles.sectionTitle}>
                 Description
               </h2>
-              <p className={styles.description}>{listing.description}</p>
+              <Description text={listing.description} />
             </section>
           )}
         </div>
 
-        <aside className={styles.aside}>
+        <div className={styles.tracking}>
           <TrackingPanel listingId={listing.id} tracking={listing.tracking} />
+        </div>
 
+        <aside className={styles.aside}>
           {listing.priceBenchmark && (
             <section className={styles.card} aria-labelledby="benchmark-heading">
               <h2 id="benchmark-heading" className={styles.cardTitle}>

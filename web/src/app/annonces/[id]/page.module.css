@@ -78,12 +78,21 @@
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 32px;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "main tracking"
+    "main aside";
+  gap: 16px 32px;
   margin-top: 24px;
   align-items: start;
 }
 
+.tracking {
+  grid-area: tracking;
+}
+
 .main {
+  grid-area: main;
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -91,6 +100,7 @@
 }
 
 .aside {
+  grid-area: aside;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -196,8 +206,14 @@
 
 .walk {
   margin-left: auto;
+  min-width: 0;
   color: var(--secondary-text-color);
-  white-space: nowrap;
+  text-align: right;
+}
+
+.stations li > :first-child,
+.essentials li > :first-child {
+  flex-shrink: 0;
 }
 
 .stationDot {
@@ -226,14 +242,6 @@
 
 .stationDot[data-line="rem"] {
   background: #7ac143;
-}
-
-.description {
-  margin: 0;
-  max-width: 70ch;
-  font-size: 15px;
-  line-height: 1.6;
-  white-space: pre-line;
 }
 
 .card {
@@ -317,9 +325,17 @@
   color: var(--secondary-text-color);
 }
 
+/* On a phone the follow-up comes right after the price: starring and moving a listing
+   through the pipeline should not wait for the whole description. */
 @media (max-width: 1023px) {
   .layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "tracking"
+      "main"
+      "aside";
+    gap: 32px;
   }
 
 }

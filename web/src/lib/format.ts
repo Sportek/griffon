@@ -92,8 +92,11 @@ export function formatDateTime(iso: string): string {
 }
 
 /** Availability as the source gives it: an ISO date, "immédiatement" or free text. */
+const AVAILABLE_NOW = /^(immediate(ly)?|now|asap|available now|immédiat(ement)?|maintenant|disponible( maintenant| immédiatement)?)$/i;
+
 export function formatAvailability(value: string | null): string | null {
   if (!value) return null;
+  if (AVAILABLE_NOW.test(value.trim())) return "Disponible maintenant";
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
     const date = new Date(`${value.slice(0, 10)}T12:00:00`);
     return date.getTime() <= Date.now() ? "Disponible maintenant" : `Dès le ${dateFormat.format(date)}`;

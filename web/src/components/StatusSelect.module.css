@@ -1,0 +1,93 @@
+.root {
+  position: relative;
+}
+
+.cell,
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: none;
+  border-radius: var(--border-radius-small);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter var(--motion-productive-short) var(--motion-timing-transition);
+}
+
+.cell {
+  height: 40px;
+  font-size: 15px;
+}
+
+.root[data-size="small"] .cell {
+  height: 32px;
+  font-size: 14px;
+}
+
+.cell:hover,
+.option:hover {
+  filter: brightness(0.94);
+}
+
+.cell:not([data-status]) {
+  background: var(--primary-background-color);
+  border: 1px dashed var(--ui-border-color);
+  color: var(--secondary-text-color);
+}
+
+/* Light fills take dark text: white on them would fall under 4.5:1. */
+.cell[data-status="TO_CONTACT"],
+.cell[data-status="CONTACTED"],
+.cell[data-status="APPLIED"],
+.cell[data-status="OBTAINED"],
+.option[data-status="TO_CONTACT"],
+.option[data-status="CONTACTED"],
+.option[data-status="APPLIED"],
+.option[data-status="OBTAINED"] {
+  color: #1f2029;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  padding: 8px;
+  background: var(--primary-background-color);
+  border: 1px solid var(--layout-border-color);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--box-shadow-medium);
+}
+
+.option {
+  height: 32px;
+  font-size: 14px;
+}
+
+.option[aria-checked="true"] {
+  outline: 2px solid var(--primary-text-color);
+  outline-offset: 1px;
+}
+
+.clear {
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--secondary-text-color);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: var(--border-radius-small);
+}
+
+.clear:hover {
+  background: var(--primary-background-hover-color, var(--allgrey-background-color));
+}
