@@ -1,6 +1,7 @@
 # Dokploy deployment (Compose service, source: this repo, compose path: listings-api/compose.dokploy.yaml).
 #
-# - No published ports: the Dokploy domain (service "griffon-api", port 8080) routes through Traefik.
+# - No published ports: the Dokploy domains (service "griffon-api", port 8080, and
+#   "griffon-web", port 3000) route through Traefik.
 # - Services have project-unique names: Dokploy attaches the routed service to the shared
 #   dokploy-network, where a short name like "mongo" may resolve to another project's container.
 # - Every service joins dokploy-network: on the Dokploy host, traffic between containers of
@@ -89,9 +90,8 @@ services:
       retries: 3
 
   # The web app (Next.js). It is the only client of the API key besides the worker: the
-  # browser talks to it, never to griffon-api. Its route is declared here rather than in
-  # Dokploy's Domains tab. The app has no login of its own: WEB_PUBLIC=false closes the
-  # route, e.g. while setting up Cloudflare Access in front of it.
+  # browser talks to it, never to griffon-api. Its domain is set in Dokploy (service
+  # griffon-web, port 3000). It has no login of its own.
   griffon-web:
     build: ../web
     restart: unless-stopped
@@ -104,13 +104,6 @@ services:
     environment:
       LISTINGS_API_URL: http://griffon-api:8080/graphql
       LISTINGS_API_KEY: ${API_KEY}
-    labels:
-      - traefik.enable=${WEB_PUBLIC:-true}
-      - traefik.docker.network=dokploy-network
-      - traefik.http.routers.griffon-web.rule=Host(`${WEB_DOMAIN:-griffon.gablandry.com}`)
-      - traefik.http.routers.griffon-web.entrypoints=web
-      - traefik.http.routers.griffon-web.service=griffon-web
-      - traefik.http.services.griffon-web.loadbalancer.server.port=3000
 
   griffon-worker:
     build: ../scraper
