@@ -37,7 +37,7 @@ La CI GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) la
 
 ## Production
 
-- **Dokploy** : service Compose depuis ce repo, chemin `listings-api/compose.dokploy.yaml`, domaine sur le service `griffon-api` (port 8080). L'interface web (`griffon-web`) déclare elle-même sa route `griffon.gablandry.com`, fermée tant que `WEB_PUBLIC` n'est pas `true` : le domaine doit d'abord être derrière Cloudflare Access. Variables : voir [`listings-api/.env.prod.example`](listings-api/.env.prod.example).
+- **Dokploy** : service Compose depuis ce repo, chemin `listings-api/compose.dokploy.yaml`, domaine sur le service `griffon-api` (port 8080). L'interface web (`griffon-web`) déclare elle-même sa route `griffon.gablandry.com` ; elle n'a pas de connexion, `WEB_PUBLIC=false` ferme la route. Variables : voir [`listings-api/.env.prod.example`](listings-api/.env.prod.example).
 - **Sans Dokploy** : `listings-api/compose.prod.yaml`.
 - **Worker sur une autre machine** (IP résidentielle conseillée) : `scraper/compose.worker.yaml`.
 
