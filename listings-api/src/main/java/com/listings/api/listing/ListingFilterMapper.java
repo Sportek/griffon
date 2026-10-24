@@ -98,8 +98,23 @@ public final class ListingFilterMapper {
 			List<Object> center = List.of(List.of(near.longitude(), near.latitude()), near.radiusKm() / EARTH_RADIUS_KM);
 			query.append("location", new Document("$geoWithin", new Document("$centerSphere", center)));
 		}
+		if (filter.within() != null) {
+			if (filter.near() != null) {
+				throw new IllegalArgumentException("near and within cannot be combined");
+			}
+			query.append("location", new Document("$geoWithin", new Document("$geometry", polygon(filter.within()))));
+		}
 
 		return query;
+	}
+
+	private static Document polygon(BoundingBox box) {
+		if (box.south() >= box.north() || box.west() >= box.east()) {
+			throw new IllegalArgumentException("within needs south < north and west < east");
+		}
+		List<List<Double>> ring = List.of(List.of(box.west(), box.south()), List.of(box.east(), box.south()),
+				List.of(box.east(), box.north()), List.of(box.west(), box.north()), List.of(box.west(), box.south()));
+		return new Document("type", "Polygon").append("coordinates", List.of(ring));
 	}
 
 	private static void range(Document query, String field, Object min, Object max) {

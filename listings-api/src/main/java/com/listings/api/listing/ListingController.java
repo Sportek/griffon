@@ -41,6 +41,11 @@ class ListingController {
 	}
 
 	@QueryMapping
+	List<MapPoint> mapListings(@Argument ListingFilter filter, @Argument Integer limit) {
+		return queries.mapPoints(filter, (limit != null) ? limit : 5000);
+	}
+
+	@QueryMapping
 	ListingStats listingStats(@Argument ListingFilter filter) {
 		return queries.stats(filter);
 	}
@@ -63,6 +68,11 @@ class ListingController {
 	@SchemaMapping
 	List<Listing> duplicates(Listing listing) {
 		return queries.duplicateGroup(listing);
+	}
+
+	@SchemaMapping
+	PriceBenchmark priceBenchmark(Listing listing) {
+		return queries.priceBenchmark(listing);
 	}
 
 }

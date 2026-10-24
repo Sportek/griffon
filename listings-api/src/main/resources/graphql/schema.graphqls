@@ -13,6 +13,9 @@ type Query {
     "Recherche paginée avec filtres et tri."
     listings(filter: ListingFilter, sort: ListingSort = NEWEST, page: Int = 0, size: Int = 20): ListingPage!
 
+    "Points de carte légers (id, position, prix, taille) des annonces géolocalisées, les plus récentes d'abord."
+    mapListings(filter: ListingFilter, limit: Int = 5000): [MapPoint!]!
+
     "Les listings découverts le plus récemment (firstSeenAt décroissant)."
     latestListings(limit: Int = 20, since: DateTime, filter: ListingFilter): [Listing!]!
 
@@ -33,6 +36,9 @@ type Query {
     savedSearches: [SavedSearch!]!
     "Alertes générées par les recherches sauvegardées, les plus récentes en premier."
     alerts(savedSearchId: ID, since: DateTime, limit: Int = 50): [Alert!]!
+
+    "Annonces suivies (favoris, statut, notes), les plus récemment modifiées d'abord. hidden: true liste les annonces masquées."
+    trackedListings(favorite: Boolean, statuses: [TrackingStatus!], hidden: Boolean = false): [TrackedListing!]!
 }
 
 type Mutation {
@@ -73,6 +79,9 @@ type Mutation {
     createSavedSearch(input: SavedSearchInput!): SavedSearch!
     updateSavedSearch(id: ID!, input: SavedSearchInput!): SavedSearch!
     deleteSavedSearch(id: ID!): Boolean!
+
+    "Met à jour le suivi d'une annonce (mise à jour partielle). Un suivi vidé de tout contenu est supprimé."
+    updateTracking(listingId: ID!, input: TrackingInput!): Tracking!
 }
 
 enum ListingType { RENT, SALE, UNKNOWN }
@@ -171,6 +180,68 @@ type Listing {
     duplicateOf: Listing
     "Les autres annonces du même groupe de doublons (même adresse, mêmes chambres, prix proche)."
     duplicates: [Listing!]!
+
+    "Comparaison avec le prix médian des annonces actives de même taille du quartier (ou de la ville)."
+    priceBenchmark: PriceBenchmark
+    "Suivi personnel de l'annonce (favori, statut, notes), null si elle n'est pas suivie."
+    tracking: Tracking
+}
+
+type MapPoint {
+    id: ID!
+    latitude: Float!
+    longitude: Float!
+    price: Float
+    roomsQc: Float
+    bedrooms: Float
+    locationPrecision: String
+    firstSeenAt: DateTime!
+}
+
+type PriceBenchmark {
+    "NEIGHBORHOOD ou CITY."
+    scope: String!
+    "Nom du quartier ou de la ville."
+    area: String!
+    roomsQc: Float
+    bedrooms: Float
+    median: Float!
+    sampleSize: Int!
+    "Écart au prix médian en %, négatif = moins cher."
+    deltaPercent: Float!
+}
+
+enum TrackingStatus { TO_CONTACT, CONTACTED, VISIT_PLANNED, VISITED, APPLIED, REFUSED, OBTAINED }
+
+type Tracking {
+    listingId: ID!
+    favorite: Boolean!
+    status: TrackingStatus
+    notes: String
+    visitAt: DateTime
+    hidden: Boolean!
+    "Prix de l'annonce au moment où elle a été suivie, pour signaler un changement."
+    priceWhenTracked: Float
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type TrackedListing {
+    tracking: Tracking!
+    "null si l'annonce a été supprimée."
+    listing: Listing
+}
+
+"Mise à jour partielle : un champ null est laissé tel quel."
+input TrackingInput {
+    favorite: Boolean
+    status: TrackingStatus
+    clearStatus: Boolean
+    "Une chaîne vide efface la note."
+    notes: String
+    visitAt: DateTime
+    clearVisitAt: Boolean
+    hidden: Boolean
 }
 
 type PricePoint {
@@ -233,12 +304,23 @@ input ListingFilter {
     excludeDuplicates: Boolean
 
     near: GeoFilter
+    "Rectangle de carte (incompatible avec near)."
+    within: BoundingBox
     maxMetroWalkMinutes: Float
     maxRemWalkMinutes: Float
     "Métro OU REM à moins de N minutes."
     maxTransitWalkMinutes: Float
     "Catégories de commerces/services qui doivent toutes être à distance de marche (ex: grocery, pharmacy)."
     nearbyCategories: [String!]
+    "Masque les annonces masquées dans le suivi, avec tout leur groupe de doublons."
+    excludeHidden: Boolean
+}
+
+input BoundingBox {
+    south: Float!
+    west: Float!
+    north: Float!
+    east: Float!
 }
 
 input GeoFilter {
@@ -447,10 +529,19 @@ type SavedFilter {
     active: Boolean
     excludeDuplicates: Boolean
     near: SavedGeoFilter
+    within: SavedBoundingBox
     maxMetroWalkMinutes: Float
     maxRemWalkMinutes: Float
     maxTransitWalkMinutes: Float
     nearbyCategories: [String!]
+    excludeHidden: Boolean
+}
+
+type SavedBoundingBox {
+    south: Float!
+    west: Float!
+    north: Float!
+    east: Float!
 }
 
 type SavedGeoFilter {

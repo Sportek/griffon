@@ -14,6 +14,7 @@ import com.listings.api.alert.SavedSearch;
 import com.listings.api.listing.Listing;
 import com.listings.api.run.IngestionRun;
 import com.listings.api.run.ScrapeSchedule;
+import com.listings.api.tracking.Tracking;
 import org.junit.jupiter.api.BeforeEach;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +58,7 @@ public abstract class IntegrationTest {
 	void cleanDatabase() {
 		clock.reset();
 		for (String collection : List.of(Listing.COLLECTION, IngestionRun.COLLECTION, ScrapeSchedule.COLLECTION,
-				SavedSearch.COLLECTION, Alert.COLLECTION)) {
+				SavedSearch.COLLECTION, Alert.COLLECTION, Tracking.COLLECTION)) {
 			mongo.remove(new Query(), collection);
 		}
 	}

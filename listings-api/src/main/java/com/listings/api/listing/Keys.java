@@ -38,6 +38,46 @@ final class Keys {
 	}
 
 	/**
+	 * Each source labels the same service its own way ("Heat", "Heated", "Chauffage"...):
+	 * a few canonical keys, matched on the normalized label, let one filter cover them all.
+	 * Both the labels' own keys and the canonical ones are stored.
+	 */
+	static final Map<String, List<String>> CANONICAL_UTILITIES = Map.of(
+			"chauffage", List.of("heat", "chauff"),
+			"eau chaude", List.of("hot water", "eau chaude"),
+			"electricite", List.of("electric", "hydro"));
+
+	static final Map<String, List<String>> CANONICAL_AMENITIES = Map.of(
+			"balcon", List.of("balcon", "balcony", "terrace", "terrasse", "patio"),
+			"laveuse secheuse", List.of("washer", "dryer", "laveuse", "secheuse", "laundry"),
+			"lave vaisselle", List.of("dishwasher", "lave vaisselle"),
+			"climatisation", List.of("air condition", "climatis"),
+			"ascenseur", List.of("elevator", "ascenseur"),
+			"stationnement", List.of("parking", "stationnement", "garage"),
+			"cour", List.of("backyard", "yard", "cour"));
+
+	static List<String> utilityKeys(List<String> labels) {
+		return withCanonical(labels, CANONICAL_UTILITIES);
+	}
+
+	static List<String> amenityKeys(List<String> labels) {
+		return withCanonical(labels, CANONICAL_AMENITIES);
+	}
+
+	private static List<String> withCanonical(List<String> labels, Map<String, List<String>> canonical) {
+		if (labels == null) {
+			return List.of();
+		}
+		List<String> keys = new java.util.ArrayList<>(normalize(labels));
+		canonical.forEach((key, needles) -> {
+			if (!keys.contains(key) && keys.stream().anyMatch(k -> needles.stream().anyMatch(k::contains))) {
+				keys.add(key);
+			}
+		});
+		return keys;
+	}
+
+	/**
 	 * Copy of a free-form JSON object whose keys are safe as MongoDB field names: scrapers
 	 * build {@code extra} keys from page labels, which may contain "." or start with "$".
 	 */

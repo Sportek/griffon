@@ -36,8 +36,10 @@ public record ListingFilter(
 		Boolean active,
 		Boolean excludeDuplicates,
 		GeoFilter near,
+		BoundingBox within,
 		Double maxMetroWalkMinutes,
 		Double maxRemWalkMinutes,
 		Double maxTransitWalkMinutes,
-		List<String> nearbyCategories) {
+		List<String> nearbyCategories,
+		Boolean excludeHidden) {
 }
