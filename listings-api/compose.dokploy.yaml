@@ -1,11 +1,13 @@
 # Dokploy deployment (Compose service, source: this repo, compose path: listings-api/compose.dokploy.yaml).
 #
-# - No published ports: the Dokploy domain (service "api", port 8080) routes through Traefik.
+# - No published ports: the Dokploy domain (service "griffon-api", port 8080) routes through Traefik.
+# - Services have project-unique names: Dokploy attaches the routed service to the shared
+#   dokploy-network, where a short name like "mongo" may resolve to another project's container.
 # - Set the variables in Dokploy's "Environment" tab (see .env.prod.example).
 # - WORKER_REPLICAS=1 runs the scrape worker in the same stack (on a residential-IP server),
 #   0 when the worker runs elsewhere (scraper/compose.worker.yaml, pointed at the API domain).
 services:
-  mongo:
+  griffon-mongo:
     image: mongo:7.0
     restart: unless-stopped
     environment:
@@ -19,14 +21,14 @@ services:
       timeout: 5s
       retries: 5
 
-  mongo-backup:
+  griffon-mongo-backup:
     image: mongo:7.0
     restart: unless-stopped
     depends_on:
-      mongo:
+      griffon-mongo:
         condition: service_healthy
     environment:
-      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/listings?authSource=admin
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@griffon-mongo:27017/listings?authSource=admin
       KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:
       - mongo-backups:/backup
@@ -39,16 +41,16 @@ services:
           sleep 86400
         done
 
-  api:
+  griffon-api:
     build: .
     restart: unless-stopped
     depends_on:
-      mongo:
+      griffon-mongo:
         condition: service_healthy
     expose:
       - "8080"
     environment:
-      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/listings?authSource=admin
+      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@griffon-mongo:27017/listings?authSource=admin
       API_KEY: ${API_KEY:?set API_KEY}
       API_KEY_PROTECT_QUERIES: ${API_KEY_PROTECT_QUERIES:-true}
       GRAPHIQL_ENABLED: ${GRAPHIQL_ENABLED:-false}
@@ -63,16 +65,16 @@ services:
       timeout: 5s
       retries: 3
 
-  worker:
+  griffon-worker:
     build: ../scraper
     restart: unless-stopped
     deploy:
       replicas: ${WORKER_REPLICAS:-1}
     depends_on:
-      api:
+      griffon-api:
         condition: service_started
     environment:
-      LISTINGS_API_URL: http://api:8080/graphql
+      LISTINGS_API_URL: http://griffon-api:8080/graphql
       LISTINGS_API_KEY: ${API_KEY}
       WORKER_NAME: ${WORKER_NAME:-gremlin}
       WORKER_SOURCES: ${WORKER_SOURCES:-}

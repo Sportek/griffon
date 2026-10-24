@@ -34,7 +34,7 @@ La CI GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) la
 
 ## Production
 
-- **Dokploy** : service Compose depuis ce repo, chemin `listings-api/compose.dokploy.yaml`, domaine sur le service `api` (port 8080). Variables : voir [`listings-api/.env.prod.example`](listings-api/.env.prod.example).
+- **Dokploy** : service Compose depuis ce repo, chemin `listings-api/compose.dokploy.yaml`, domaine sur le service `griffon-api` (port 8080). Variables : voir [`listings-api/.env.prod.example`](listings-api/.env.prod.example).
 - **Sans Dokploy** : `listings-api/compose.prod.yaml`.
 - **Worker sur une autre machine** (IP résidentielle conseillée) : `scraper/compose.worker.yaml`.
 
