@@ -17,6 +17,7 @@ Backfill an existing JSONL file:
 import argparse
 import json
 import os
+import time
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -121,6 +122,13 @@ class ApiError(RuntimeError):
     pass
 
 
+# While the API is redeployed, the proxy in front of it answers 404/502/503 for a minute
+# or so. A scrape takes hours: it waits the restart out instead of failing the whole run.
+# Retrying is safe, since upserts are idempotent.
+TRANSIENT_STATUSES = {404, 502, 503, 504}
+RETRY_DELAYS_S = (2, 5, 10, 20, 30, 60, 60)
+
+
 class ApiSink:
     def __init__(
         self,
@@ -129,6 +137,7 @@ class ApiSink:
         api_key: str | None = None,
         timeout: float = 30,
         batch_size: int = 200,
+        retry_delays: tuple[float, ...] = RETRY_DELAYS_S,
     ):
         self.url = url or os.getenv("LISTINGS_API_URL", DEFAULT_URL)
         self.batch_size = batch_size
@@ -136,9 +145,25 @@ class ApiSink:
         headers = {"X-API-Key": api_key} if api_key else {}
         self._client = httpx.Client(timeout=timeout, headers=headers)
         self._run_id: str | None = None
+        self._retry_delays = retry_delays
+
+    def _post(self, payload: dict) -> httpx.Response:
+        for delay in (*self._retry_delays, None):
+            try:
+                resp = self._client.post(self.url, json=payload)
+                if resp.status_code not in TRANSIENT_STATUSES or delay is None:
+                    return resp
+                reason = f"HTTP {resp.status_code}"
+            except httpx.TransportError as e:
+                if delay is None:
+                    raise
+                reason = repr(e)
+            print(f"[api] {reason}, retrying in {delay:g} s")
+            time.sleep(delay)
+        raise AssertionError("unreachable")
 
     def _execute(self, query: str, variables: dict | None = None) -> dict:
-        resp = self._client.post(self.url, json={"query": query, "variables": variables or {}})
+        resp = self._post({"query": query, "variables": variables or {}})
         resp.raise_for_status()
         body = resp.json()
         if body.get("errors"):

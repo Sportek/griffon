@@ -1,4 +1,7 @@
-from scraper.api_sink import _FIELDS, to_input
+import httpx
+import pytest
+
+from scraper.api_sink import _FIELDS, ApiSink, to_input
 from scraper.models import Listing
 
 
@@ -15,3 +18,32 @@ def test_to_input_maps_names_and_enums():
     assert sent["pricePeriod"] == "MONTHLY"
     assert sent["roomsQc"] == 4.0
     assert "price" not in sent  # None values are omitted
+
+
+def _sink_with(responses):
+    calls = iter(responses)
+
+    def handler(request):
+        item = next(calls)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    sink = ApiSink("http://api.test/graphql", retry_delays=(0, 0, 0))
+    sink._client = httpx.Client(transport=httpx.MockTransport(handler))
+    return sink
+
+
+def test_transient_errors_are_retried_until_the_api_is_back():
+    ok = httpx.Response(200, json={"data": {"listings": {"totalElements": 7}}})
+    sink = _sink_with([httpx.Response(404), httpx.ConnectError("refused"), httpx.Response(502), ok])
+    assert len(sink) == 7
+
+
+def test_retries_give_up_and_client_errors_fail_at_once():
+    sink = _sink_with([httpx.Response(503)] * 4)
+    with pytest.raises(httpx.HTTPStatusError):
+        len(sink)
+    sink = _sink_with([httpx.Response(401)])
+    with pytest.raises(httpx.HTTPStatusError):
+        len(sink)
