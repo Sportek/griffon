@@ -1,0 +1,29 @@
+.signals {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.signal {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--border-radius-small);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.signal[data-kind="new"] {
+  background: var(--signal-new);
+}
+
+.signal[data-kind="drop"] {
+  background: var(--signal-drop);
+}
+
+.signal[data-kind="gone"] {
+  background: var(--signal-gone);
+}

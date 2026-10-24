@@ -1,0 +1,16 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .actions {
+    width: 100%;
+  }
+
+  .actions > :first-child {
+    flex: 1;
+  }
+}

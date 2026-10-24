@@ -1,0 +1,35 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--border-radius-small);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.pill[data-size="small"] {
+  min-width: 96px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+/* Light fills take dark text: white on them would fall under 4.5:1. */
+.pill[data-status="TO_CONTACT"],
+.pill[data-status="CONTACTED"],
+.pill[data-status="APPLIED"],
+.pill[data-status="OBTAINED"] {
+  color: #1f2029;
+}
+
+.pill[data-empty] {
+  background: var(--ui-background-color, var(--allgrey-background-color));
+  color: var(--secondary-text-color);
+  border: 1px dashed var(--ui-border-color);
+}

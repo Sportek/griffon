@@ -1,0 +1,8 @@
+.wrapper {
+  display: inline-flex;
+}
+
+.wrapper[data-active] :global(svg) {
+  color: var(--negative-color);
+  fill: currentColor;
+}

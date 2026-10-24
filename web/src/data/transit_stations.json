@@ -1,0 +1,826 @@
+[
+ {
+  "name": "Acadie",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.523225,
+  "longitude": -73.6237511
+ },
+ {
+  "name": "Angrignon",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4461825,
+  "longitude": -73.6036506
+ },
+ {
+  "name": "Assomption",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5693911,
+  "longitude": -73.5467318
+ },
+ {
+  "name": "Atwater",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4896787,
+  "longitude": -73.5863126
+ },
+ {
+  "name": "Beaubien",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5351749,
+  "longitude": -73.6049594
+ },
+ {
+  "name": "Beaudry",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5195498,
+  "longitude": -73.5571716
+ },
+ {
+  "name": "Berri-UQAM",
+  "network": "metro",
+  "lines": [
+   "green",
+   "orange",
+   "yellow"
+  ],
+  "latitude": 45.5151125,
+  "longitude": -73.5610756
+ },
+ {
+  "name": "Bonaventure",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4981853,
+  "longitude": -73.5669583
+ },
+ {
+  "name": "Cadillac",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5768358,
+  "longitude": -73.5466995
+ },
+ {
+  "name": "Cartier",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.56023,
+  "longitude": -73.6817986
+ },
+ {
+  "name": "Champ-de-Mars",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5101439,
+  "longitude": -73.556487
+ },
+ {
+  "name": "Charlevoix",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4782496,
+  "longitude": -73.5693705
+ },
+ {
+  "name": "Crémazie",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5461436,
+  "longitude": -73.6388375
+ },
+ {
+  "name": "Côte-Sainte-Catherine",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4923747,
+  "longitude": -73.6328602
+ },
+ {
+  "name": "Côte-Vertu",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5142942,
+  "longitude": -73.6832845
+ },
+ {
+  "name": "Côte-des-Neiges",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.4966507,
+  "longitude": -73.623489
+ },
+ {
+  "name": "D'Iberville",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.5525993,
+  "longitude": -73.6026995
+ },
+ {
+  "name": "De Castelnau",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.5352621,
+  "longitude": -73.6201056
+ },
+ {
+  "name": "De La Savane",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5003824,
+  "longitude": -73.6615981
+ },
+ {
+  "name": "De l'Église",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4626897,
+  "longitude": -73.567008
+ },
+ {
+  "name": "De la Concorde",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.560853,
+  "longitude": -73.7097434
+ },
+ {
+  "name": "Du Collège",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5084616,
+  "longitude": -73.6728291
+ },
+ {
+  "name": "Fabre",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.5467522,
+  "longitude": -73.6078016
+ },
+ {
+  "name": "Frontenac",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5331536,
+  "longitude": -73.5522155
+ },
+ {
+  "name": "Georges-Vanier",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.488951,
+  "longitude": -73.5764602
+ },
+ {
+  "name": "Guy-Concordia",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4953736,
+  "longitude": -73.5798383
+ },
+ {
+  "name": "Henri-Bourassa",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5545124,
+  "longitude": -73.6682516
+ },
+ {
+  "name": "Honoré-Beaugrand",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.596414,
+  "longitude": -73.5354362
+ },
+ {
+  "name": "Jarry",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5432233,
+  "longitude": -73.6286029
+ },
+ {
+  "name": "Jean-Drapeau",
+  "network": "metro",
+  "lines": [
+   "yellow"
+  ],
+  "latitude": 45.5124469,
+  "longitude": -73.5331259
+ },
+ {
+  "name": "Jean-Talon",
+  "network": "metro",
+  "lines": [
+   "orange",
+   "blue"
+  ],
+  "latitude": 45.5391835,
+  "longitude": -73.6134236
+ },
+ {
+  "name": "Jolicoeur",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.45686,
+  "longitude": -73.5819981
+ },
+ {
+  "name": "Joliette",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5469325,
+  "longitude": -73.5510099
+ },
+ {
+  "name": "LaSalle",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4708146,
+  "longitude": -73.5661308
+ },
+ {
+  "name": "Langelier",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5827257,
+  "longitude": -73.5431577
+ },
+ {
+  "name": "Laurier",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5280804,
+  "longitude": -73.5883784
+ },
+ {
+  "name": "Lionel-Groulx",
+  "network": "metro",
+  "lines": [
+   "green",
+   "orange"
+  ],
+  "latitude": 45.4823143,
+  "longitude": -73.5804673
+ },
+ {
+  "name": "Longueuil–Université-de-Sherbrooke",
+  "network": "metro",
+  "lines": [
+   "yellow"
+  ],
+  "latitude": 45.5249263,
+  "longitude": -73.5219251
+ },
+ {
+  "name": "Lucien-L'Allier",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4950136,
+  "longitude": -73.5709494
+ },
+ {
+  "name": "McGill",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5040858,
+  "longitude": -73.5715689
+ },
+ {
+  "name": "Monk",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4510439,
+  "longitude": -73.5932019
+ },
+ {
+  "name": "Mont-Royal",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5245985,
+  "longitude": -73.5816468
+ },
+ {
+  "name": "Montmorency",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5583531,
+  "longitude": -73.7215179
+ },
+ {
+  "name": "Namur",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4949329,
+  "longitude": -73.6529072
+ },
+ {
+  "name": "Outremont",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.5201103,
+  "longitude": -73.6148897
+ },
+ {
+  "name": "Papineau",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5237396,
+  "longitude": -73.5521686
+ },
+ {
+  "name": "Parc",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.530416,
+  "longitude": -73.6245212
+ },
+ {
+  "name": "Peel",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5006095,
+  "longitude": -73.5750881
+ },
+ {
+  "name": "Pie-IX",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5541959,
+  "longitude": -73.5515329
+ },
+ {
+  "name": "Place-Saint-Henri",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4773938,
+  "longitude": -73.5863775
+ },
+ {
+  "name": "Place-d'Armes",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5060856,
+  "longitude": -73.559605
+ },
+ {
+  "name": "Place-des-Arts",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5080307,
+  "longitude": -73.5683162
+ },
+ {
+  "name": "Plamondon",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4943703,
+  "longitude": -73.6379309
+ },
+ {
+  "name": "Préfontaine",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5417253,
+  "longitude": -73.5542369
+ },
+ {
+  "name": "Radisson",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5896475,
+  "longitude": -73.5397875
+ },
+ {
+  "name": "Rosemont",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5314962,
+  "longitude": -73.5973383
+ },
+ {
+  "name": "Saint-Laurent",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5108831,
+  "longitude": -73.5648092
+ },
+ {
+  "name": "Saint-Michel",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.5597489,
+  "longitude": -73.5999622
+ },
+ {
+  "name": "Sauvé",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5511003,
+  "longitude": -73.6565058
+ },
+ {
+  "name": "Sherbrooke",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.5187201,
+  "longitude": -73.5680527
+ },
+ {
+  "name": "Snowdon",
+  "network": "metro",
+  "lines": [
+   "orange",
+   "blue"
+  ],
+  "latitude": 45.4856705,
+  "longitude": -73.6283531
+ },
+ {
+  "name": "Square-Victoria-OACI",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.50209,
+  "longitude": -73.5631107
+ },
+ {
+  "name": "Université-de-Montréal",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.503439,
+  "longitude": -73.617581
+ },
+ {
+  "name": "Vendôme",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4738941,
+  "longitude": -73.6038307
+ },
+ {
+  "name": "Verdun",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.4592869,
+  "longitude": -73.5720103
+ },
+ {
+  "name": "Viau",
+  "network": "metro",
+  "lines": [
+   "green"
+  ],
+  "latitude": 45.5611109,
+  "longitude": -73.5473091
+ },
+ {
+  "name": "Villa-Maria",
+  "network": "metro",
+  "lines": [
+   "orange"
+  ],
+  "latitude": 45.4797551,
+  "longitude": -73.6197555
+ },
+ {
+  "name": "Édouard-Montpetit",
+  "network": "metro",
+  "lines": [
+   "blue"
+  ],
+  "latitude": 45.5101323,
+  "longitude": -73.6125273
+ },
+ {
+  "name": "Anse-à-l'Orme",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4315922,
+  "longitude": -73.9099082
+ },
+ {
+  "name": "Bois-Franc",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5220256,
+  "longitude": -73.7125027
+ },
+ {
+  "name": "Brossard",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4380608,
+  "longitude": -73.4305816
+ },
+ {
+  "name": "Canora",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5137474,
+  "longitude": -73.6338787
+ },
+ {
+  "name": "Côte-de-Liesse",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5218201,
+  "longitude": -73.6618689
+ },
+ {
+  "name": "Des Sources",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4771109,
+  "longitude": -73.7911081
+ },
+ {
+  "name": "Deux-Montagnes",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5456833,
+  "longitude": -73.9124135
+ },
+ {
+  "name": "Du Quartier",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4466901,
+  "longitude": -73.4333122
+ },
+ {
+  "name": "Du Ruisseau",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5289193,
+  "longitude": -73.6903801
+ },
+ {
+  "name": "Fairview-Pointe-Claire",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4599523,
+  "longitude": -73.8353279
+ },
+ {
+  "name": "Gare Centrale",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4999265,
+  "longitude": -73.5666874
+ },
+ {
+  "name": "Grand-Moulin",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5372549,
+  "longitude": -73.8878846
+ },
+ {
+  "name": "Kirkland",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4403141,
+  "longitude": -73.885608
+ },
+ {
+  "name": "McGill",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5024871,
+  "longitude": -73.572129
+ },
+ {
+  "name": "Montpellier",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5248032,
+  "longitude": -73.6722229
+ },
+ {
+  "name": "Panama",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4649595,
+  "longitude": -73.4703605
+ },
+ {
+  "name": "Pierrefonds-Roxboro",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5102045,
+  "longitude": -73.8116322
+ },
+ {
+  "name": "Sainte-Dorothée",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5234599,
+  "longitude": -73.8624724
+ },
+ {
+  "name": "Sunnybrooke",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5038395,
+  "longitude": -73.7857006
+ },
+ {
+  "name": "Ville-de-Mont-Royal",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5165145,
+  "longitude": -73.643454
+ },
+ {
+  "name": "Édouard-Montpetit",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5103737,
+  "longitude": -73.6120612
+ },
+ {
+  "name": "Île-Bigras",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.5199056,
+  "longitude": -73.8529506
+ },
+ {
+  "name": "Île-des-Soeurs",
+  "network": "rem",
+  "lines": [
+   "REM"
+  ],
+  "latitude": 45.4703304,
+  "longitude": -73.5388987
+ }
+]

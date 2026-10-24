@@ -1,0 +1,5 @@
+/* Vibe pins the toast to the top edge: lift it over the sticky header and the map. */
+.toast {
+  z-index: 1000;
+  top: var(--header-height);
+}

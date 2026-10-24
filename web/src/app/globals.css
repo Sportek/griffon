@@ -1,0 +1,95 @@
+:root {
+  /* Vibe names Figtree first; next/font serves it under a generated family name. */
+  --font-family: var(--font-figtree), Roboto, "Noto Sans", sans-serif;
+  --title-font-family: var(--font-figtree), Roboto, "Noto Sans", sans-serif;
+
+  /* monday's status column, applied to the rental pipeline. */
+  --status-to-contact: #579bfc;
+  --status-contacted: #fdab3d;
+  --status-visit-planned: #784bd1;
+  --status-visited: #007eb5;
+  --status-applied: #ffcb00;
+  --status-refused: #df2f4a;
+  --status-obtained: #00c875;
+
+  /* The same language on listings: freshness and price movement. */
+  --signal-new: #00854d;
+  --signal-drop: #c2410c;
+  --signal-gone: #676879;
+
+  --header-height: 56px;
+  --filters-height: 64px;
+  --list-width: clamp(360px, 34vw, 480px);
+  --gutter: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--allgrey-background-color);
+  color: var(--primary-text-color);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--primary-selected-color);
+  color: var(--primary-text-color);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-color) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ui-border-color);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+input,
+textarea {
+  caret-color: var(--primary-color);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 52px;
+  }
+}

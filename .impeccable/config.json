@@ -1,0 +1,33 @@
+{
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "web/src/app/vibe.generated.css"
+        ],
+        "createdAt": "2026-10-24T19:48:47.088Z",
+        "reason": "Agent: generated copy of Vibe's own component CSS, the design system the user pinned; not authored here"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "*",
+        "files": [
+          "web/src/app/vibe.generated.css"
+        ],
+        "createdAt": "2026-10-24T19:48:47.282Z",
+        "reason": "Agent: generated copy of Vibe's own component CSS, the design system the user pinned; not authored here"
+      }
+    ]
+  }
+}

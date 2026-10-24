@@ -1,0 +1,16 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.text {
+  margin: 0;
+  color: var(--secondary-text-color);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.text a {
+  color: var(--link-color, var(--primary-color));
+}

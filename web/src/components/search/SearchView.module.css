@@ -1,0 +1,130 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--header-height));
+}
+
+.split {
+  /* Keeps the panes' own layers (sticky header, map controls) under Vibe's popups. */
+  isolation: isolate;
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--list-width) 1fr;
+  min-height: 0;
+}
+
+.listPane {
+  overflow-y: auto;
+  padding: 0 var(--gutter) 24px;
+  border-right: 1px solid var(--layout-border-color);
+  background: var(--allgrey-background-color);
+}
+
+.resultsHeader {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 14px 0 10px;
+  background: var(--allgrey-background-color);
+}
+
+.count {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.scope {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  margin-top: 48px;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+}
+
+.mapPane {
+  position: relative;
+  min-height: 0;
+}
+
+.map {
+  position: absolute !important;
+  inset: 0;
+}
+
+.mapLoading {
+  position: absolute;
+  inset: 0;
+  background: var(--allgrey-background-color);
+}
+
+.preview {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 4;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: var(--box-shadow-medium);
+  border-radius: var(--border-radius-medium);
+}
+
+.viewToggle {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .split {
+    grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  .listPane {
+    border-right: none;
+    padding-bottom: 96px;
+  }
+
+  .view[data-view="list"] .mapPane,
+  .view[data-view="map"] .listPane {
+    display: none;
+  }
+
+  .preview {
+    bottom: 84px;
+  }
+
+  .viewToggle {
+    position: fixed;
+    left: 50%;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 30;
+    display: block;
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--box-shadow-large);
+  }
+}

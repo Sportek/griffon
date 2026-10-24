@@ -1,0 +1,107 @@
+.figure {
+  margin: 0;
+}
+
+.chart {
+  position: relative;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--layout-border-color);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--secondary-text-color);
+  font-size: 12px;
+}
+
+.line {
+  fill: none;
+  stroke: var(--primary-color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.marker {
+  fill: var(--primary-color);
+  stroke: var(--primary-background-color);
+  stroke-width: 2;
+  transition: r var(--motion-productive-medium) var(--motion-timing-transition);
+}
+
+.marker[data-active] {
+  r: 7;
+}
+
+.hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.hit:focus-visible {
+  outline: none;
+  stroke: var(--primary-color);
+  stroke-width: 2;
+}
+
+.tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  border-radius: var(--border-radius-small);
+  background: var(--inverted-color-background, #323338);
+  color: var(--text-color-on-inverted, #ffffff);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--box-shadow-small);
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.changes li {
+  display: flex;
+  gap: 12px;
+}
+
+.changes li > span:first-child {
+  min-width: 140px;
+  color: var(--secondary-text-color);
+}
+
+.value {
+  font-weight: 600;
+}
+
+.diff[data-direction="down"] {
+  color: var(--positive-color);
+}
+
+.diff[data-direction="up"] {
+  color: var(--negative-color);
+}
+
+.single {
+  margin: 0;
+  font-size: 14px;
+  color: var(--secondary-text-color);
+}
