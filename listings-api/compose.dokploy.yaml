@@ -88,6 +88,30 @@ services:
       timeout: 5s
       retries: 3
 
+  # The web app (Next.js). It is the only client of the API key besides the worker: the
+  # browser talks to it, never to griffon-api. Its route is declared here rather than in
+  # Dokploy's Domains tab, and stays closed until WEB_PUBLIC=true: griffon.gablandry.com
+  # must sit behind Cloudflare Access first, since the app has no login of its own.
+  griffon-web:
+    build: ../web
+    restart: unless-stopped
+    depends_on:
+      griffon-api:
+        condition: service_healthy
+    expose:
+      - "3000"
+    networks: [dokploy-network]
+    environment:
+      LISTINGS_API_URL: http://griffon-api:8080/graphql
+      LISTINGS_API_KEY: ${API_KEY}
+    labels:
+      - traefik.enable=${WEB_PUBLIC:-false}
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.griffon-web.rule=Host(`${WEB_DOMAIN:-griffon.gablandry.com}`)
+      - traefik.http.routers.griffon-web.entrypoints=web
+      - traefik.http.routers.griffon-web.service=griffon-web
+      - traefik.http.services.griffon-web.loadbalancer.server.port=3000
+
   griffon-worker:
     build: ../scraper
     restart: unless-stopped

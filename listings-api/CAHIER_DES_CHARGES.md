@@ -114,6 +114,22 @@ l'alimente, et les clients (front, scripts d'analyse, alertes…) l'interrogent.
 - Pause aléatoire de 2 à 5 s entre deux requêtes HTTP (3 à 7 s pour les sources navigateur), respect de `Retry-After` et attente exponentielle sur 429/5xx.
 - Arrêt de la source après 3 réponses 403/429 consécutives, plafond de requêtes par exécution ; l'exécution est `FAILED` avec la raison au lieu d'insister.
 
+### F13 — Carte ✅
+- `mapListings(filter, limit)` : points légers (id, position, prix, taille, précision de la position) des annonces géolocalisées, jusqu'à 10 000.
+- Filtre `within` (rectangle de carte, incompatible avec `near`), utilisable aussi par `listings` et les recherches sauvegardées.
+
+### F14 — Suivi des démarches ✅
+- Un suivi par annonce (collection `trackings`, utilisateur unique pour l'instant) : favori, statut (`TO_CONTACT` → `OBTAINED`), notes, date de visite, masquée, prix au moment du suivi.
+- `updateTracking(listingId, input)` (mise à jour partielle ; un suivi vidé est supprimé), `trackedListings(favorite, statuses, hidden)`, champ `Listing.tracking`.
+- Filtre `excludeHidden` : une annonce masquée disparaît des résultats avec tout son groupe de doublons.
+
+### F15 — Repère de prix ✅
+- `Listing.priceBenchmark` : médiane des annonces actives, hors doublons, de même taille (X ½, sinon chambres) dans le quartier, ou dans la ville s'il y en a moins de 5.
+
+### F16 — Services et commodités canoniques ✅
+- Chaque source nomme les services à sa façon (« Heat », « Heated », « Chauffage ») : des clés canoniques (`chauffage`, `eau chaude`, `electricite`, `balcon`, `laveuse secheuse`, `lave vaisselle`, `climatisation`, `ascenseur`, `stationnement`, `cour`) s'ajoutent aux clés normalisées, et un filtre sur l'une d'elles couvre toutes les sources.
+- Recalculées au démarrage pour les annonces déjà stockées (`KeysBackfill`).
+
 ## 5. Exigences non fonctionnelles
 
 - **Configuration** par variables d'environnement : `MONGODB_URI`, `PORT`, `GRAPHIQL_ENABLED`,
