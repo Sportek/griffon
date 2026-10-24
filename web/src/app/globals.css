@@ -16,11 +16,23 @@
   --signal-new: #00854d;
   --signal-drop: #c2410c;
   --signal-gone: #676879;
+  /* The drop colour as text: #c2410c holds 4.5:1 on white but not on the dark surface. */
+  --signal-drop-ink: #c2410c;
 
   --header-height: 56px;
   --filters-height: 64px;
   --list-width: clamp(360px, 34vw, 480px);
   --gutter: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light-app-theme) {
+    --signal-drop-ink: #ff9a5c;
+  }
+}
+
+.dark-app-theme {
+  --signal-drop-ink: #ff9a5c;
 }
 
 * {

@@ -131,7 +131,7 @@
 }
 
 .cheaper {
-  color: var(--signal-drop);
+  color: var(--signal-drop-ink);
   font-weight: 600;
 }
 

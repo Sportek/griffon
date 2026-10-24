@@ -1,0 +1,594 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T20:06:40.542Z",
+  "title": "Design System: Griffon",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Bleu monday",
+        "canonical": "#0073ea",
+        "tonalRamp": [
+          "#0b2642",
+          "#0d3f73",
+          "#0b58a8",
+          "#0571e1",
+          "#1e8afa",
+          "#72b1f3",
+          "#bdd8f4",
+          "#eaf2fa"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Bleu monday survol",
+        "canonical": "#0060b9",
+        "tonalRamp": [
+          "#0b2742",
+          "#0d4273",
+          "#0b5ca8",
+          "#0577e1",
+          "#1e90fa",
+          "#72b5f3",
+          "#bddaf4",
+          "#eaf3fa"
+        ]
+      },
+      "primary-selected": {
+        "role": "primary",
+        "displayName": "Bleu sélection",
+        "canonical": "#cce5ff",
+        "tonalRamp": [
+          "#0b2642",
+          "#0d3f73",
+          "#0b58a8",
+          "#0571e1",
+          "#1e8afa",
+          "#72b1f3",
+          "#bdd8f4",
+          "#eaf2fa"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#b3b3b3",
+          "#d9d9d9",
+          "#f2f2f2"
+        ]
+      },
+      "app-frame": {
+        "role": "neutral",
+        "displayName": "Cadre de l'app",
+        "canonical": "#f6f7fb",
+        "tonalRamp": [
+          "#1c2031",
+          "#2c3453",
+          "#3b4777",
+          "#48599d",
+          "#6273b7",
+          "#9aa4cb",
+          "#ced2e3",
+          "#eff0f5"
+        ]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Encre",
+        "canonical": "#323338",
+        "tonalRamp": [
+          "#252528",
+          "#3d3e43",
+          "#55565e",
+          "#6d6f79",
+          "#868892",
+          "#afb0b6",
+          "#d7d8da",
+          "#f2f2f3"
+        ]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Encre secondaire",
+        "canonical": "#676879",
+        "tonalRamp": [
+          "#242428",
+          "#3c3c44",
+          "#535460",
+          "#6a6b7c",
+          "#838495",
+          "#adaeb8",
+          "#d7d7db",
+          "#f2f2f3"
+        ]
+      },
+      "ui-border": {
+        "role": "neutral",
+        "displayName": "Bordure de contrôle",
+        "canonical": "#c3c6d4",
+        "tonalRamp": [
+          "#22232b",
+          "#373a48",
+          "#4c5166",
+          "#616785",
+          "#7a809e",
+          "#a8acbd",
+          "#d4d6dd",
+          "#f1f1f4"
+        ]
+      },
+      "layout-border": {
+        "role": "neutral",
+        "displayName": "Filet de structure",
+        "canonical": "#d0d4e4",
+        "tonalRamp": [
+          "#1f222e",
+          "#32374e",
+          "#444d6e",
+          "#556191",
+          "#6e7aaa",
+          "#a1a8c4",
+          "#d1d4e0",
+          "#f0f1f4"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Surface sombre",
+        "canonical": "#181b34",
+        "tonalRamp": [
+          "#1c1e30",
+          "#2d3153",
+          "#3c4376",
+          "#4a539b",
+          "#646cb5",
+          "#9ba0ca",
+          "#cfd1e3",
+          "#eff0f5"
+        ]
+      },
+      "dark-frame": {
+        "role": "neutral",
+        "displayName": "Cadre sombre",
+        "canonical": "#30324e",
+        "tonalRamp": [
+          "#20212d",
+          "#34354c",
+          "#47496c",
+          "#595c8d",
+          "#7276a6",
+          "#a3a5c2",
+          "#d2d3df",
+          "#f0f1f4"
+        ]
+      },
+      "dark-text-primary": {
+        "role": "neutral",
+        "displayName": "Encre sombre",
+        "canonical": "#d5d8df",
+        "tonalRamp": [
+          "#23252a",
+          "#393d47",
+          "#4f5564",
+          "#646d82",
+          "#7d869b",
+          "#aaafbb",
+          "#d5d7dc",
+          "#f1f2f3"
+        ]
+      },
+      "dark-text-secondary": {
+        "role": "neutral",
+        "displayName": "Encre secondaire sombre",
+        "canonical": "#9699a6",
+        "tonalRamp": [
+          "#242529",
+          "#3c3d44",
+          "#535560",
+          "#6a6d7c",
+          "#838795",
+          "#adafb8",
+          "#d6d7db",
+          "#f2f2f3"
+        ]
+      },
+      "dark-ui-border": {
+        "role": "neutral",
+        "displayName": "Bordure de contrôle sombre",
+        "canonical": "#797e93",
+        "tonalRamp": [
+          "#232429",
+          "#3a3c45",
+          "#515462",
+          "#676b7f",
+          "#808598",
+          "#acaeb9",
+          "#d6d7dc",
+          "#f1f2f3"
+        ]
+      },
+      "dark-layout-border": {
+        "role": "neutral",
+        "displayName": "Filet sombre",
+        "canonical": "#4b4e69",
+        "tonalRamp": [
+          "#22232b",
+          "#373948",
+          "#4c4f66",
+          "#606485",
+          "#7a7e9f",
+          "#a8aabd",
+          "#d4d5dd",
+          "#f1f1f4"
+        ]
+      },
+      "status-to-contact": {
+        "role": "secondary",
+        "displayName": "À contacter",
+        "canonical": "#579bfc",
+        "tonalRamp": [
+          "#0c2241",
+          "#0f3771",
+          "#0d4ca5",
+          "#0860dd",
+          "#227af7",
+          "#74a8f1",
+          "#bed4f3",
+          "#eaf1fa"
+        ]
+      },
+      "status-contacted": {
+        "role": "secondary",
+        "displayName": "Contacté",
+        "canonical": "#fdab3d",
+        "tonalRamp": [
+          "#412a0b",
+          "#72470e",
+          "#a6640c",
+          "#df8207",
+          "#f89c20",
+          "#f1bc74",
+          "#f4ddbe",
+          "#faf3ea"
+        ]
+      },
+      "status-visit-planned": {
+        "role": "secondary",
+        "displayName": "Visite prévue",
+        "canonical": "#784bd1",
+        "tonalRamp": [
+          "#211637",
+          "#36225e",
+          "#4a2b88",
+          "#5d31b4",
+          "#774bce",
+          "#a68cd9",
+          "#d3c8e9",
+          "#f1edf7"
+        ]
+      },
+      "status-visited": {
+        "role": "secondary",
+        "displayName": "Visité",
+        "canonical": "#007eb5",
+        "tonalRamp": [
+          "#0b3142",
+          "#0d5473",
+          "#0b78a8",
+          "#059ee1",
+          "#1eb7fa",
+          "#72ccf3",
+          "#bde4f4",
+          "#eaf5fa"
+        ]
+      },
+      "status-applied": {
+        "role": "secondary",
+        "displayName": "Candidature",
+        "canonical": "#ffcb00",
+        "tonalRamp": [
+          "#42370b",
+          "#735e0d",
+          "#a8880b",
+          "#e1b405",
+          "#facd1e",
+          "#f3d972",
+          "#f4e9bd",
+          "#faf7ea"
+        ]
+      },
+      "status-refused": {
+        "role": "secondary",
+        "displayName": "Refusé",
+        "canonical": "#df2f4a",
+        "tonalRamp": [
+          "#3a1218",
+          "#651a26",
+          "#932031",
+          "#c4223b",
+          "#dd3b54",
+          "#e28392",
+          "#edc5cb",
+          "#f8ecee"
+        ]
+      },
+      "status-obtained": {
+        "role": "secondary",
+        "displayName": "Obtenu",
+        "canonical": "#00c875",
+        "tonalRamp": [
+          "#0b422b",
+          "#0d7348",
+          "#0ba867",
+          "#05e185",
+          "#1efa9f",
+          "#72f3bd",
+          "#bdf4dd",
+          "#eafaf4"
+        ]
+      },
+      "status-ink": {
+        "role": "neutral",
+        "displayName": "Encre de statut",
+        "canonical": "#1f2029",
+        "tonalRamp": [
+          "#22232a",
+          "#393a47",
+          "#4e5164",
+          "#636782",
+          "#7d809c",
+          "#aaabbb",
+          "#d5d6dd",
+          "#f1f1f3"
+        ]
+      },
+      "signal-new": {
+        "role": "tertiary",
+        "displayName": "Nouveau",
+        "canonical": "#00854d",
+        "tonalRamp": [
+          "#0b422b",
+          "#0d7348",
+          "#0ba866",
+          "#05e184",
+          "#1efa9e",
+          "#72f3bd",
+          "#bdf4dd",
+          "#eafaf4"
+        ]
+      },
+      "signal-drop": {
+        "role": "tertiary",
+        "displayName": "Baisse de prix",
+        "canonical": "#c2410c",
+        "tonalRamp": [
+          "#3f1c0e",
+          "#6d2d13",
+          "#9f3c14",
+          "#d44a11",
+          "#ee642b",
+          "#eb9b7a",
+          "#f1cfc0",
+          "#f9efeb"
+        ]
+      },
+      "signal-gone": {
+        "role": "tertiary",
+        "displayName": "Retirée",
+        "canonical": "#676879",
+        "tonalRamp": [
+          "#242428",
+          "#3c3c44",
+          "#535460",
+          "#6a6b7c",
+          "#838495",
+          "#adaeb8",
+          "#d7d7db",
+          "#f2f2f3"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Prix en tête de la page d'annonce (26px sous 767px)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Titres de page (Suivi, Alertes)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Prix sur la carte d'annonce, compte de résultats, nom Griffon (17px sous 767px)."
+      },
+      "title-sm": {
+        "displayName": "Title-sm",
+        "purpose": "Titre d'annonce sur la carte."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texte courant, quartier, détails, navigation (500). Chiffres tabulaires."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Portée des résultats, petites pastilles de statut, navigation téléphone."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Signaux (600), méta des cartes et légende (400)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "box-shadow-small",
+        "value": "0px 4px 8px rgba(0, 0, 0, 0.2)",
+        "purpose": "Survol de carte d'annonce, contrôles posés sur la carte. Sombre : 0px 4px 8px rgba(9, 11, 25, 0.5)."
+      },
+      {
+        "name": "box-shadow-medium",
+        "value": "0px 6px 20px rgba(0, 0, 0, 0.2)",
+        "purpose": "Menus déroulants, « Rechercher dans cette zone », aperçu sur la carte. Sombre : 0px 6px 20px rgba(9, 11, 25, 0.5)."
+      },
+      {
+        "name": "box-shadow-large",
+        "value": "0px 15px 50px rgba(0, 0, 0, 0.3)",
+        "purpose": "Sélecteur flottant Liste/Carte sur téléphone. Sombre : 0px 15px 50px rgba(9, 11, 25, 0.5)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "motion-productive-short",
+        "value": "70ms",
+        "purpose": "Assombrissement au survol des cellules de statut."
+      },
+      {
+        "name": "motion-productive-medium",
+        "value": "100ms",
+        "purpose": "Couleur des liens, bordure et ombre des cartes."
+      },
+      {
+        "name": "motion-timing-transition",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Courbe de toutes les transitions d'état."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "767px"
+      },
+      {
+        "name": "tablet",
+        "value": "1023px"
+      },
+      {
+        "name": "filters-compact",
+        "value": "1279px"
+      }
+    ],
+    "theme": {
+      "mechanism": "Variables .dark-app-theme de Vibe recopiées sous @media (prefers-color-scheme: dark) { :root:not(.light-app-theme) } par web/scripts/extract-vibe-css.mjs ; ThemeClass pose .dark-app-theme / .light-app-theme après hydratation pour les règles Vibe écrites contre la classe.",
+      "themeColor": {
+        "light": "#ffffff",
+        "dark": "#181b34"
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "Bouton primaire",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Action principale Vibe (« M'alerter ») dans la barre de filtres.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" aria-hidden=\"true\"><path d=\"M10 3a5 5 0 0 0-5 5v3l-1.5 2.5h13L15 11V8a5 5 0 0 0-5-5Z\"/><path d=\"M8 16a2 2 0 0 0 4 0\"/></svg>M'alerter</button>",
+      "css": ".ds-btn-primary { font-family: Figtree, Roboto, 'Noto Sans', sans-serif; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px; border: none; border-radius: var(--border-radius-small, 4px); background: var(--primary-color, #0073ea); color: var(--text-color-on-primary, #ffffff); font-size: 14px; font-weight: 400; cursor: pointer; transition: background 100ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: var(--primary-hover-color, #0060b9); } .ds-btn-primary:focus-visible { outline: 2px solid var(--primary-color, #0073ea); outline-offset: 2px; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Barre du haut : marque G, liens Recherche / Suivi / Alertes, actif souligné en bleu.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-mark\">G</span><span class=\"ds-nav-name\">Griffon</span><a class=\"ds-nav-link\" data-active href=\"#\">Recherche</a><a class=\"ds-nav-link\" href=\"#\">Suivi</a><a class=\"ds-nav-link\" href=\"#\">Alertes</a></nav>",
+      "css": ".ds-nav { font-family: Figtree, Roboto, 'Noto Sans', sans-serif; display: flex; align-items: stretch; gap: 4px; height: 56px; padding: 0 16px; background: var(--primary-background-color, #ffffff); border-bottom: 1px solid var(--layout-border-color, #d0d4e4); } .ds-nav-mark { align-self: center; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 4px; background: var(--primary-color, #0073ea); color: #fff; font-weight: 700; font-size: 16px; } .ds-nav-name { align-self: center; margin: 0 20px 0 4px; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--primary-text-color, #323338); } .ds-nav-link { position: relative; display: flex; align-items: center; padding: 0 12px; color: var(--secondary-text-color, #676879); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 100ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-link:hover { color: var(--primary-text-color, #323338); } .ds-nav-link:focus-visible { outline: 2px solid var(--primary-color, #0073ea); outline-offset: 2px; } .ds-nav-link[data-active] { color: var(--primary-color, #0073ea); } .ds-nav-link[data-active]::after { content: \"\"; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px 2px 0 0; background: var(--primary-color, #0073ea); }"
+    },
+    {
+      "name": "Carte d'annonce",
+      "kind": "card",
+      "refersTo": "listing-card",
+      "description": "Vignette carrée + prix, signaux, faits, quartier, méta ; bordure bleue et petite ombre au survol.",
+      "html": "<article class=\"ds-card\" tabindex=\"0\"><div class=\"ds-card-photo\"></div><div><div class=\"ds-card-top\"><span class=\"ds-card-price\">1 675 $/mois</span><span class=\"ds-card-signal\">Nouveau</span></div><p class=\"ds-card-title\">5 ½ · 2 ch. · 750 pi²</p><p class=\"ds-card-place\">Rosemont/La Petite-Patrie, Montréal</p><p class=\"ds-card-meta\">Logis Québec · vue à l'instant</p></div></article>",
+      "css": ".ds-card { font-family: Figtree, Roboto, 'Noto Sans', sans-serif; font-variant-numeric: tabular-nums; display: grid; grid-template-columns: 128px 1fr; gap: 12px; padding: 12px; max-width: 440px; background: var(--primary-background-color, #fff); border: 1px solid var(--layout-border-color, #d0d4e4); border-radius: var(--border-radius-medium, 8px); color: var(--primary-text-color, #323338); transition: border-color 100ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 100ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-card:hover { border-color: var(--primary-color, #0073ea); box-shadow: var(--box-shadow-small, 0 4px 8px rgba(0, 0, 0, 0.2)); } .ds-card:focus-visible { outline: 2px solid var(--primary-color, #0073ea); outline-offset: 2px; } .ds-card-photo { aspect-ratio: 1; border-radius: 4px; background: var(--allgrey-background-color, #f6f7fb); } .ds-card-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; } .ds-card-price { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; } .ds-card-title { margin: 2px 0 0; font-size: 15px; font-weight: 600; } .ds-card-place { margin: 2px 0 0; font-size: 14px; } .ds-card-meta { margin: 4px 0 0; font-size: 12px; color: var(--secondary-text-color, #676879); } .ds-card-signal { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 4px; background: var(--signal-new, #00854d); color: #fff; font-size: 12px; font-weight: 600; }"
+    },
+    {
+      "name": "Pastilles de statut",
+      "kind": "chip",
+      "refersTo": "status-pill-to-contact",
+      "description": "Blocs de statut monday pleine couleur ; encre foncée sur les teintes claires, blanc sur les foncées.",
+      "html": "<div class=\"ds-status-row\"><span class=\"ds-status\" data-s=\"to-contact\">À contacter</span><span class=\"ds-status\" data-s=\"contacted\">Contacté</span><span class=\"ds-status\" data-s=\"visit-planned\">Visite prévue</span><span class=\"ds-status\" data-s=\"visited\">Visité</span><span class=\"ds-status\" data-s=\"applied\">Candidature</span><span class=\"ds-status\" data-s=\"refused\">Refusé</span><span class=\"ds-status\" data-s=\"obtained\">Obtenu</span><span class=\"ds-status\" data-empty>Sans statut</span></div>",
+      "css": ".ds-status-row { font-family: Figtree, Roboto, 'Noto Sans', sans-serif; display: flex; flex-wrap: wrap; gap: 8px; } .ds-status { display: inline-flex; align-items: center; justify-content: center; min-width: 112px; height: 32px; padding: 0 12px; border-radius: 4px; color: #fff; font-size: 14px; font-weight: 500; line-height: 1; white-space: nowrap; } .ds-status[data-s=\"to-contact\"] { background: #579bfc; color: #1f2029; } .ds-status[data-s=\"contacted\"] { background: #fdab3d; color: #1f2029; } .ds-status[data-s=\"visit-planned\"] { background: #784bd1; } .ds-status[data-s=\"visited\"] { background: #007eb5; } .ds-status[data-s=\"applied\"] { background: #ffcb00; color: #1f2029; } .ds-status[data-s=\"refused\"] { background: #df2f4a; } .ds-status[data-s=\"obtained\"] { background: #00c875; color: #1f2029; } .ds-status[data-empty] { background: var(--allgrey-background-color, #f6f7fb); color: var(--secondary-text-color, #676879); border: 1px dashed var(--ui-border-color, #c3c6d4); }"
+    },
+    {
+      "name": "Sélecteur de statut",
+      "kind": "custom",
+      "refersTo": "status-select-cell",
+      "description": "Cellule de statut cliquable (40px) qui s'assombrit au survol et ouvre un menu de blocs.",
+      "html": "<button class=\"ds-status-cell\">Visite prévue</button>",
+      "css": ".ds-status-cell { font-family: Figtree, Roboto, 'Noto Sans', sans-serif; display: flex; align-items: center; justify-content: center; width: 260px; height: 40px; border: none; border-radius: 4px; background: #784bd1; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; transition: filter 70ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-status-cell:hover { filter: brightness(0.94); } .ds-status-cell:focus-visible { outline: 2px solid var(--primary-color, #0073ea); outline-offset: 2px; }"
+    },
+    {
+      "name": "Signaux",
+      "kind": "chip",
+      "refersTo": "signal-new",
+      "description": "Fraîcheur, baisse de prix, retrait : pastilles pleines 20px, texte blanc.",
+      "html": "<span class=\"ds-signals\"><span class=\"ds-sig\" data-kind=\"new\">Nouveau</span><span class=\"ds-sig\" data-kind=\"drop\">−120 $</span><span class=\"ds-sig\" data-kind=\"gone\">Retirée</span></span>",
+      "css": ".ds-signals { font-family: Figtree, Roboto, 'Noto Sans', sans-serif; display: inline-flex; gap: 4px; } .ds-sig { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; } .ds-sig[data-kind=\"new\"] { background: #00854d; } .ds-sig[data-kind=\"drop\"] { background: #c2410c; } .ds-sig[data-kind=\"gone\"] { background: #676879; }"
+    },
+    {
+      "name": "Épingles et grappes de la carte",
+      "kind": "custom",
+      "refersTo": "map-pin",
+      "description": "Gélules de prix (défaut, nouvelle, survolée) et grappe bleue, telles que MapLibre les dessine.",
+      "html": "<div class=\"ds-map\"><span class=\"ds-pin\">1,7 k$</span><span class=\"ds-pin\" data-kind=\"new\">1,4 k$</span><span class=\"ds-pin\" data-kind=\"active\">2 k$</span><span class=\"ds-cluster\">22</span></div>",
+      "css": ".ds-map { font-family: 'Noto Sans', sans-serif; display: flex; align-items: center; gap: 12px; padding: 16px; background: #eceef1; border-radius: 8px; } .ds-pin { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 9999px; background: #fff; border: 1px solid #c3c6d4; color: #323338; font-size: 12px; font-weight: 700; } .ds-pin[data-kind=\"new\"] { background: #00854d; border-color: #00854d; color: #fff; } .ds-pin[data-kind=\"active\"] { background: #0073ea; border-color: #0073ea; color: #fff; font-size: 13px; } .ds-cluster { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: rgb(0 115 234 / 0.92); border: 2px solid #fff; color: #fff; font-size: 13px; font-weight: 700; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le tableau de bord de la chasse",
+    "overview": "Griffon n'invente pas son monde visuel : c'est le design system Vibe de monday.com (`@vibe/core` 4.5.38, épinglé par l'utilisateur), utilisé tel qu'il est livré. Fond blanc sur le cadre gris clair de l'application, Figtree, le bleu monday pour les actions et la sélection, et les composants Vibe (boutons, dropdowns, chips, onglets, modales, toasts) sans restylage. L'outil se lit comme un outil de travail : dense, calme, chiffres alignés, aucune décoration.\n\nLe geste signature vient de monday lui-même : la colonne de statut. Le pipeline de suivi (À contacter → Obtenu) s'affiche en blocs de statut pleine couleur, et la même grammaire de pastilles pleines marque la fraîcheur et le mouvement des prix sur les cartes (nouveau en vert, baisse de prix en orange, retirée en gris). Sur la carte, seul le signal « nouveau » colore les épingles ; la baisse de prix n'y apparaît pas dans la version livrée. Une couleur pleine veut toujours dire un état ; le reste de l'interface reste neutre pour que ces états se voient.\n\nLe thème suit le système : clair par défaut, sombre Vibe (`.dark-app-theme`) quand l'appareil le demande, sans script ni flash, parce que les variables sombres sont recopiées sous une requête `prefers-color-scheme` dans la feuille Vibe générée.",
+    "keyCharacteristics": [
+      "Vibe tel que livré : ses variables CSS sont la source de vérité, jamais de valeurs codées en dur pour l'interface.",
+      "Couleur pleine = état (statut de suivi ou signal d'annonce) ; tout le reste est neutre.",
+      "Densité d'outil de travail : 14px par défaut, chiffres tabulaires, cartes compactes.",
+      "Liste + carte côte à côte sur grand écran, une seule des deux à la fois sur téléphone.",
+      "Thème clair et sombre suivant le système, sans flash."
+    ],
+    "rules": [
+      {
+        "name": "The Full-Colour State Rule",
+        "body": "Une couleur saturée pleine signifie un état, rien d'autre : statut de suivi ou signal d'annonce. Aucun bouton, fond ou ornement n'emprunte ces teintes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Ink Rule",
+        "body": "Sur les statuts clairs (`status-to-contact`, `status-contacted`, `status-applied`, `status-obtained`), le texte est `status-ink` ; sur les statuts foncés (`status-visit-planned`, `status-visited`, `status-refused`) et sur les trois signaux, il est blanc. Le blanc sur un statut clair tombe sous 4,5:1 ; toute nouvelle couleur d'état doit être classée d'un côté ou de l'autre par son contraste mesuré.",
+        "section": "colors"
+      },
+      {
+        "name": "The Vibe Variable Rule",
+        "body": "Les surfaces, textes et bordures passent par les variables Vibe (`--primary-background-color`, `--allgrey-background-color`, `--primary-text-color`, `--secondary-text-color`, `--layout-border-color`, `--ui-border-color`, `--primary-color`) pour que le thème sombre suive seul. Seuls les états (statuts, signaux) ont des valeurs fixes, déclarées dans `globals.css`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight Not Family Rule",
+        "body": "Figtree partout ; on hiérarchise par la graisse et la taille. Pas de capitales espacées, pas de surtitre au-dessus des titres.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float-Only Shadow Rule",
+        "body": "Une ombre signifie « posé au-dessus » (sur la carte, en menu, en flottant) ou « survolé ». Une surface dans le flux n'a qu'un filet.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** utiliser les composants et variables Vibe tels que livrés ; régénérer `vibe.generated.css` avec `scripts/extract-vibe-css.mjs` après toute montée de version.",
+      "**Do** réserver les couleurs pleines aux états, et classer le texte de toute nouvelle couleur d'état par contraste mesuré (`status-ink` ou blanc, 4,5:1 minimum).",
+      "**Do** garder une seule famille (Figtree) et des chiffres tabulaires.",
+      "**Do** n'ajouter une ombre qu'à ce qui flotte ou répond à un survol.",
+      "**Do** vérifier chaque écran dans les deux thèmes ; une couleur fixe posée en texte doit tenir 4,5:1 sur `surface` comme sur `dark-surface`."
+    ],
+    "donts": [
+      "**Don't** restyler les composants Vibe ni coder des valeurs hexadécimales pour les surfaces, textes ou bordures.",
+      "**Don't** utiliser une teinte de statut ou de signal comme couleur décorative, de bouton ou de fond de section.",
+      "**Don't** mettre du texte blanc sur `status-to-contact`, `status-contacted`, `status-applied` ou `status-obtained`.",
+      "**Don't** faire apparaître une annonce retirée comme disponible : signal `signal-gone`, photo désaturée.",
+      "**Don't** ajouter de surtitres, de capitales espacées ou une seconde famille typographique."
+    ]
+  }
+}
