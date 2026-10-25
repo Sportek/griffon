@@ -119,9 +119,10 @@ public class ListingIngestionService {
 
 			Document set = new Document("lastSeenAt", now)
 				.append("scrapedAt", (input.scrapedAt() != null) ? input.scrapedAt() : now)
-				.append("active", true)
-				// Derived key is refreshed even when unchanged, so older documents get grouped too.
-				.append(DuplicateDetector.KEY, duplicateKey);
+				.append("active", true);
+			// Derived fields are refreshed even when the content is unchanged, so a change to
+			// how they are computed reaches every listing on its next scrape.
+			DERIVED.stream().filter(fields::containsKey).forEach(key -> set.append(key, fields.get(key)));
 			Document unset = new Document("inactiveSince", "");
 			Document update = new Document("$inc", new Document("seenCount", 1));
 			IngestStatus status;
@@ -254,7 +255,9 @@ public class ListingIngestionService {
 			.append("extra", Keys.safeFieldNames(in.extra()))
 			.append("proximity", Keys.safeFieldNames(in.proximity()))
 			.append(DuplicateDetector.KEY, DuplicateDetector.key(in.address(), in.bedrooms()))
-			.append(DuplicateDetector.UNIT, DuplicateDetector.unit(in.address()));
+			.append(DuplicateDetector.UNIT, DuplicateDetector.unit(in.address()))
+			.append(Buildings.KEY,
+					Buildings.key(in.address(), in.city(), in.latitude(), in.longitude(), in.locationPrecision()));
 		ProximityFacts.appendTo(doc, in.proximity());
 		if (in.latitude() != null && in.longitude() != null) {
 			doc.append("location",
@@ -267,9 +270,18 @@ public class ListingIngestionService {
 		return new Document("price", price).append("observedAt", at);
 	}
 
+	/**
+	 * Fields computed from the scraped ones. They stay out of the content hash: changing how
+	 * they are derived must not flag every listing as modified.
+	 */
+	private static final Set<String> DERIVED = Set.of(Keys.CITY, Keys.NEIGHBORHOOD, Keys.AMENITIES, Keys.UTILITIES,
+			DuplicateDetector.KEY, DuplicateDetector.UNIT, Buildings.KEY, "location", "metroWalkMinutes",
+			"remWalkMinutes", ProximityFacts.TRANSIT, ProximityFacts.CATEGORIES);
+
 	private static String contentHash(Document fields) {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> hashed = (Map<String, Object>) canonical(fields);
+		hashed.keySet().removeAll(DERIVED);
 		if (hashed.get("proximity") instanceof Map<?, ?> proximity) {
 			// The enrichment timestamp changes on every run without the content changing.
 			proximity.remove("computed_at");

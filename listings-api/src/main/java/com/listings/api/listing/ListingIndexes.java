@@ -43,6 +43,7 @@ class ListingIndexes implements ApplicationRunner {
 				new IndexModel(Indexes.ascending("source", "active", "lastSeenAt")),
 				new IndexModel(Indexes.ascending(DuplicateDetector.KEY), new IndexOptions().sparse(true)),
 				new IndexModel(Indexes.ascending("duplicateOf"), new IndexOptions().sparse(true)),
+				new IndexModel(Indexes.ascending(Buildings.KEY), new IndexOptions().sparse(true)),
 				new IndexModel(Indexes.ascending(ProximityFacts.TRANSIT), new IndexOptions().sparse(true)),
 				new IndexModel(Indexes.geo2dsphere("location")),
 				// Listings mix French and English, so no language-specific stemming.

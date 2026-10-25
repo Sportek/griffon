@@ -30,6 +30,9 @@ public final class ListingFilterMapper {
 		if (notEmpty(filter.neighborhoods())) {
 			query.append(Keys.NEIGHBORHOOD, new Document("$in", Keys.normalize(filter.neighborhoods())));
 		}
+		if (notEmpty(filter.buildingKeys())) {
+			query.append(Buildings.KEY, new Document("$in", filter.buildingKeys()));
+		}
 		if (notEmpty(filter.propertyTypes())) {
 			query.append("propertyType", new Document("$in", filter.propertyTypes()));
 		}

@@ -130,6 +130,12 @@ l'alimente, et les clients (front, scripts d'analyse, alertes…) l'interrogent.
 - Chaque source nomme les services à sa façon (« Heat », « Heated », « Chauffage ») : des clés canoniques (`chauffage`, `eau chaude`, `electricite`, `balcon`, `laveuse secheuse`, `lave vaisselle`, `climatisation`, `ascenseur`, `stationnement`, `cour`) s'ajoutent aux clés normalisées, et un filtre sur l'une d'elles couvre toutes les sources.
 - Recalculées au démarrage pour les annonces déjà stockées (`KeysBackfill`).
 
+### F17 — Immeubles ✅
+- Clé d'immeuble `buildingKey` (numéro civique + rue sans le logement, normalisés, + ville) calculée à l'ingestion et recalculée au démarrage. Sans adresse exploitable, une position **exacte** (≈ 10 m) en tient lieu ; une position approximative jamais, car elle fusionnerait des immeubles distincts.
+- `listingGroups(filter, sort, page, size)` : chaque annonce est filtrée individuellement, puis les logements correspondants d'un immeuble sont regroupés (du moins cher au plus cher) avec `count` (correspondants) et `totalInBuilding` (actifs de l'immeuble). Les groupes sont triés selon leur meilleur membre.
+- `Listing.unit` (numéro de logement), `Listing.sameBuilding` (autres logements actifs), filtre `buildingKeys`, `MapPoint.buildingKey`.
+- Le hash de contenu ignore les champs dérivés (clés normalisées, doublons, immeuble, proximité extraite) : changer leur calcul ne marque plus toutes les annonces « modifiées ». Ils sont rafraîchis à chaque passage du scraper.
+
 ## 5. Exigences non fonctionnelles
 
 - **Configuration** par variables d'environnement : `MONGODB_URI`, `PORT`, `GRAPHIQL_ENABLED`,

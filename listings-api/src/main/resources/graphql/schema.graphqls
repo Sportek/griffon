@@ -13,6 +13,13 @@ type Query {
     "Recherche paginée avec filtres et tri."
     listings(filter: ListingFilter, sort: ListingSort = NEWEST, page: Int = 0, size: Int = 20): ListingPage!
 
+    """
+    Recherche regroupée par immeuble : chaque annonce est filtrée individuellement, puis les logements
+    correspondants d'un même immeuble sont réunis (triés par prix). Les groupes sont triés selon leur
+    meilleur membre ; une annonce sans immeuble connu forme un groupe à elle seule.
+    """
+    listingGroups(filter: ListingFilter, sort: ListingSort = NEWEST, page: Int = 0, size: Int = 20): ListingGroupPage!
+
     "Points de carte légers (id, position, prix, taille) des annonces géolocalisées, les plus récentes d'abord."
     mapListings(filter: ListingFilter, limit: Int = 5000): [MapPoint!]!
 
@@ -185,6 +192,40 @@ type Listing {
     priceBenchmark: PriceBenchmark
     "Suivi personnel de l'annonce (favori, statut, notes), null si elle n'est pas suivie."
     tracking: Tracking
+    "Immeuble (adresse civique sans le logement, et ville), null sans adresse exploitable."
+    buildingKey: String
+    "Numéro de logement extrait de l'adresse (app. 5516, #3201, 401-962...), en minuscules."
+    unit: String
+    "Les autres logements actifs du même immeuble, hors doublons, du moins cher au plus cher."
+    sameBuilding: [Listing!]!
+}
+
+type ListingGroup {
+    "Clé du groupe : l'immeuble, ou l'id de l'annonce quand elle est seule."
+    key: ID!
+    buildingKey: String
+    "Adresse de l'immeuble telle qu'écrite, sans le logement."
+    address: String
+    "Annonces du groupe qui correspondent à la recherche."
+    count: Int!
+    "Annonces actives de l'immeuble, qu'elles correspondent ou non."
+    totalInBuilding: Int!
+    minPrice: Float
+    maxPrice: Float
+    minRoomsQc: Float
+    maxRoomsQc: Float
+    "Annonces correspondantes, de la moins chère à la plus chère."
+    listings: [Listing!]!
+}
+
+type ListingGroupPage {
+    content: [ListingGroup!]!
+    page: Int!
+    size: Int!
+    totalGroups: Int!
+    totalListings: Int!
+    totalPages: Int!
+    hasNext: Boolean!
 }
 
 type MapPoint {
@@ -196,6 +237,8 @@ type MapPoint {
     bedrooms: Float
     locationPrecision: String
     firstSeenAt: DateTime!
+    "Pour regrouper sur la carte les logements d'un même immeuble."
+    buildingKey: String
 }
 
 type PriceBenchmark {
@@ -314,6 +357,8 @@ input ListingFilter {
     nearbyCategories: [String!]
     "Masque les annonces masquées dans le suivi, avec tout leur groupe de doublons."
     excludeHidden: Boolean
+    "Seulement ces immeubles (voir Listing.buildingKey)."
+    buildingKeys: [String!]
 }
 
 input BoundingBox {
@@ -535,6 +580,7 @@ type SavedFilter {
     maxTransitWalkMinutes: Float
     nearbyCategories: [String!]
     excludeHidden: Boolean
+    buildingKeys: [String!]
 }
 
 type SavedBoundingBox {

@@ -65,12 +65,23 @@ class DuplicateDetector {
 
 	/** Null when the listing has no civic address or no bedroom count to compare on. */
 	static String key(String address, Double bedrooms) {
-		if (address == null || bedrooms == null) {
+		String street = streetKey(address);
+		if (street == null || bedrooms == null) {
 			return null;
 		}
-		String street = UNIT_PREFIX.matcher(streetPart(address)).replaceFirst("");
-		String stripped = UNIT_SUFFIX.matcher(street).replaceAll(" ");
-		String normalized = Keys.normalize(stripped);
+		String beds = (bedrooms == Math.rint(bedrooms)) ? String.valueOf(bedrooms.longValue()) : bedrooms.toString();
+		return street + "|" + beds;
+	}
+
+	/**
+	 * Civic number and street, normalized and without the unit ("962 antoine verdier"): the
+	 * building, whichever apartment or source. Null without a civic address.
+	 */
+	static String streetKey(String address) {
+		if (address == null) {
+			return null;
+		}
+		String normalized = Keys.normalize(streetAddress(address));
 		if (normalized == null) {
 			return null;
 		}
@@ -83,8 +94,16 @@ class DuplicateDetector {
 		if (tokens.isEmpty() || !CIVIC_NUMBER.matcher(tokens.get(0)).matches() || !hasStreetName) {
 			return null;
 		}
-		String beds = (bedrooms == Math.rint(bedrooms)) ? String.valueOf(bedrooms.longValue()) : bedrooms.toString();
-		return String.join(" ", tokens) + "|" + beds;
+		return String.join(" ", tokens);
+	}
+
+	/** The address as written, down to number and street, unit removed: "962 rue Antoine-du-Verdier". */
+	static String streetAddress(String address) {
+		if (address == null) {
+			return null;
+		}
+		String street = UNIT_PREFIX.matcher(streetPart(address)).replaceFirst("");
+		return UNIT_SUFFIX.matcher(street).replaceAll(" ").replaceAll("\\s+", " ").trim();
 	}
 
 	/** Unit / apartment number ("401-962 rue X", "app. 5516", "#3201"), lower-cased; null if none. */

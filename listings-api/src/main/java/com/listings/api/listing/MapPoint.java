@@ -13,5 +13,6 @@ public record MapPoint(
 		Double roomsQc,
 		Double bedrooms,
 		String locationPrecision,
-		Instant firstSeenAt) {
+		Instant firstSeenAt,
+		String buildingKey) {
 }

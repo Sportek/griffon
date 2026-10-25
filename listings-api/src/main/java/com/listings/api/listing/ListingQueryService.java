@@ -2,7 +2,10 @@ package com.listings.api.listing;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +85,136 @@ public class ListingQueryService {
 		return mongo.find(query, Listing.class);
 	}
 
+	/**
+	 * The filter's results grouped by building: each listing is matched on its own, then the
+	 * matching units of one building come together, ordered by price. Groups are ordered by
+	 * the sort applied to their best member (newest unit, cheapest price...).
+	 */
+	public ListingGroupPage groups(ListingFilter filter, ListingSort sort, int page, int size) {
+		if (page < 0) {
+			throw new IllegalArgumentException("page must be >= 0");
+		}
+		if (size < 1 || size > MAX_PAGE_SIZE) {
+			throw new IllegalArgumentException("size must be between 1 and " + MAX_PAGE_SIZE);
+		}
+		GroupOrder order = GroupOrder.of(sort);
+		Document group = new Document("_id", new Document("$ifNull", List.of("$" + Buildings.KEY, "$_id")))
+			.append("ids", new Document("$push", "$_id"))
+			.append("count", new Document("$sum", 1))
+			.append("minPrice", new Document("$min", "$price"))
+			.append("maxPrice", new Document("$max", "$price"))
+			.append("minRoomsQc", new Document("$min", "$roomsQc"))
+			.append("maxRoomsQc", new Document("$max", "$roomsQc"))
+			.append("sortValue", new Document(order.accumulator(), "$" + order.field()));
+		// Groups without a value for the sort field (no price...) go last in either direction.
+		Document missing = new Document("$cond",
+				List.of(new Document("$eq", Arrays.asList(new Document("$ifNull", Arrays.asList("$sortValue", null)), null)),
+						1, 0));
+		Document totals = new Document("$group",
+				new Document("_id", null).append("groups", new Document("$sum", 1))
+					.append("listings", new Document("$sum", "$count")));
+		List<Document> pipeline = List.of(new Document("$match", query(filter)), new Document("$group", group),
+				new Document("$addFields", new Document("sortMissing", missing)),
+				new Document("$sort",
+						new Document("sortMissing", 1).append("sortValue", order.direction()).append("_id", 1)),
+				new Document("$facet", new Document("total", List.of(totals)).append("page",
+						List.of(new Document("$skip", (long) page * size), new Document("$limit", size)))));
+		Document result = mongo.getCollection(Listing.COLLECTION).aggregate(pipeline).allowDiskUse(true).first();
+		Objects.requireNonNull(result, "$facet always returns one document");
+
+		List<Document> total = result.getList("total", Document.class);
+		long totalGroups = total.isEmpty() ? 0 : ((Number) total.get(0).get("groups")).longValue();
+		long totalListings = total.isEmpty() ? 0 : ((Number) total.get(0).get("listings")).longValue();
+		List<Document> rows = result.getList("page", Document.class);
+
+		List<String> ids = rows.stream().flatMap(r -> r.getList("ids", Object.class).stream()).map(ListingQueryService::hex).toList();
+		Map<String, Listing> byId = findByIds(ids);
+		Map<String, Integer> buildingSizes = buildingSizes(
+				rows.stream().map(r -> r.get("_id")).filter(String.class::isInstance).map(String.class::cast).toList());
+
+		List<ListingGroup> groups = new ArrayList<>();
+		for (Document row : rows) {
+			List<Listing> members = row.getList("ids", Object.class)
+				.stream()
+				.map(id -> byId.get(hex(id)))
+				.filter(Objects::nonNull)
+				.sorted(BY_PRICE)
+				.toList();
+			String buildingKey = (row.get("_id") instanceof String key) ? key : null;
+			int count = row.getInteger("count");
+			int inBuilding = (buildingKey != null) ? buildingSizes.getOrDefault(buildingKey, count) : count;
+			String address = members.isEmpty() ? null : DuplicateDetector.streetAddress(members.get(0).address());
+			groups.add(new ListingGroup(hex(row.get("_id")), buildingKey, address, count, Math.max(count, inBuilding),
+					asDouble(row.get("minPrice")), asDouble(row.get("maxPrice")), asDouble(row.get("minRoomsQc")),
+					asDouble(row.get("maxRoomsQc")), members));
+		}
+		return new ListingGroupPage(groups, page, size, totalGroups, totalListings);
+	}
+
+	/** The other units on offer in the listing's building: active, not duplicates, cheapest first. */
+	public List<Listing> sameBuilding(Listing listing, String buildingKey) {
+		if (buildingKey == null) {
+			return List.of();
+		}
+		Query query = Query.query(Criteria.where(Buildings.KEY)
+			.is(buildingKey)
+			.and("_id")
+			.ne(listing.id())
+			.and("active")
+			.ne(false)
+			.and("duplicateOf")
+			.is(null));
+		return mongo.find(query, Listing.class).stream().sorted(BY_PRICE).toList();
+	}
+
+	public String buildingKey(Listing listing) {
+		Query query = Query.query(Criteria.where("_id").is(listing.id()));
+		query.fields().include(Buildings.KEY);
+		Document doc = mongo.findOne(query, Document.class, Listing.COLLECTION);
+		return (doc != null) ? doc.getString(Buildings.KEY) : null;
+	}
+
+	/** Active, non-duplicate listings per building, whatever the search. */
+	private Map<String, Integer> buildingSizes(List<String> keys) {
+		if (keys.isEmpty()) {
+			return Map.of();
+		}
+		Document match = new Document(Buildings.KEY, new Document("$in", keys))
+			.append("active", new Document("$ne", false))
+			.append("duplicateOf", null);
+		Map<String, Integer> sizes = new HashMap<>();
+		mongo.getCollection(Listing.COLLECTION)
+			.aggregate(List.of(new Document("$match", match),
+					new Document("$group", new Document("_id", "$" + Buildings.KEY).append("n", new Document("$sum", 1)))))
+			.forEach(d -> sizes.put(d.getString("_id"), d.getInteger("n")));
+		return sizes;
+	}
+
+	private static String hex(Object id) {
+		return (id instanceof ObjectId o) ? o.toHexString() : String.valueOf(id);
+	}
+
+	private static final Comparator<Listing> BY_PRICE = Comparator
+		.comparing(Listing::price, Comparator.nullsLast(Comparator.naturalOrder()))
+		.thenComparing(Listing::id);
+
+	/** How a sort orders groups: by the best value among their members. */
+	private record GroupOrder(String field, String accumulator, int direction) {
+
+		static GroupOrder of(ListingSort sort) {
+			return switch (sort) {
+				case NEWEST -> new GroupOrder("firstSeenAt", "$max", -1);
+				case OLDEST -> new GroupOrder("firstSeenAt", "$min", 1);
+				case PRICE_ASC -> new GroupOrder("price", "$min", 1);
+				case PRICE_DESC -> new GroupOrder("price", "$max", -1);
+				case AREA_DESC -> new GroupOrder("areaSqft", "$max", -1);
+				case RECENTLY_UPDATED -> new GroupOrder("updatedAt", "$max", -1);
+				case RECENTLY_SEEN -> new GroupOrder("lastSeenAt", "$max", -1);
+			};
+		}
+
+	}
+
 	/** Marker data for every located listing matching the filter, newest first. */
 	public List<MapPoint> mapPoints(ListingFilter filter, int limit) {
 		if (limit < 1 || limit > MAX_MAP_POINTS) {
@@ -93,7 +226,8 @@ public class ListingQueryService {
 		}
 		Query query = new BasicQuery(filterDoc).with(ListingSort.NEWEST.toSort()).limit(limit);
 		query.fields()
-			.include("latitude", "longitude", "price", "roomsQc", "bedrooms", "locationPrecision", "firstSeenAt");
+			.include("latitude", "longitude", "price", "roomsQc", "bedrooms", "locationPrecision", "firstSeenAt",
+					Buildings.KEY);
 		return mongo.find(query, MapPoint.class, Listing.COLLECTION);
 	}
 

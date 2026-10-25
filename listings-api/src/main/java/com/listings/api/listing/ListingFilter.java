@@ -41,5 +41,6 @@ public record ListingFilter(
 		Double maxRemWalkMinutes,
 		Double maxTransitWalkMinutes,
 		List<String> nearbyCategories,
-		Boolean excludeHidden) {
+		Boolean excludeHidden,
+		List<String> buildingKeys) {
 }

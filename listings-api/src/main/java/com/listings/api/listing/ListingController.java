@@ -41,6 +41,13 @@ class ListingController {
 	}
 
 	@QueryMapping
+	ListingGroupPage listingGroups(@Argument ListingFilter filter, @Argument ListingSort sort, @Argument Integer page,
+			@Argument Integer size) {
+		return queries.groups(filter, (sort != null) ? sort : ListingSort.NEWEST, (page != null) ? page : 0,
+				(size != null) ? size : 20);
+	}
+
+	@QueryMapping
 	List<MapPoint> mapListings(@Argument ListingFilter filter, @Argument Integer limit) {
 		return queries.mapPoints(filter, (limit != null) ? limit : 5000);
 	}
@@ -68,6 +75,21 @@ class ListingController {
 	@SchemaMapping
 	List<Listing> duplicates(Listing listing) {
 		return queries.duplicateGroup(listing);
+	}
+
+	@SchemaMapping
+	String buildingKey(Listing listing) {
+		return queries.buildingKey(listing);
+	}
+
+	@SchemaMapping
+	String unit(Listing listing) {
+		return DuplicateDetector.unit(listing.address());
+	}
+
+	@SchemaMapping
+	List<Listing> sameBuilding(Listing listing) {
+		return queries.sameBuilding(listing, queries.buildingKey(listing));
 	}
 
 	@SchemaMapping
