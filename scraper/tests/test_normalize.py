@@ -66,3 +66,37 @@ def test_rentals_ca_furnishing_is_not_an_availability():
     unit = _parse_unit_row("1 Bedroom", ["$1,450", "1 Bath", "567 ft²", "Semi-furnished", "Available"])
     assert unit["price"] == 1450.0
     assert (unit["furnished"], unit["furnishing"], unit["availability"]) == (True, "Semi-furnished", "Available")
+
+
+def test_duproprio_gallery_keeps_only_the_listings_own_photos_in_upload_order():
+    from scraper.sources.duproprio import _gallery, _primary_first
+
+    page = (
+        '{"photos":[{"formats":{"600":"photos\/public\/for_rent\/202610\/111\/a-600-12.jpg",'
+        '"1600":"photos\/public\/for_rent\/202610\/111\/a-1600-12.jpg"}},'
+        '{"formats":{"1600":"photos\/public\/for_rent\/202610\/111\/a-1600-9.jpg"}}]}'
+        '<img src="https://photos.duproprio.com/photos/public/for_rent/202610/222/other-1600-5.jpg">'
+    )
+    gallery = _gallery(page, "111")
+    assert gallery == [
+        "https://photos.duproprio.com/photos/public/for_rent/202610/111/a-1600-9.jpg",
+        "https://photos.duproprio.com/photos/public/for_rent/202610/111/a-1600-12.jpg",
+    ]
+    assert _primary_first(gallery, gallery[1]) == [gallery[1], gallery[0]]
+    assert _primary_first([], "https://x/cover.jpg") == ["https://x/cover.jpg"]
+
+
+def test_logis_quebec_gallery_adds_the_page_photos_after_the_json_ld_ones():
+    from scraper.sources.logis_quebec import _gallery
+
+    page = (
+        '<img src="https://i.logisquebec.com/i-a-louer/1/42/p1_jpg_a.jpg">'
+        '<img src="https://i.logisquebec.com/i-a-louer/1/42/p2_jpg_b.jpg">'
+        '<img src="https://i.logisquebec.com/i-a-louer/1/42/thumbnail/p2_jpg_b.jpg">'
+        '<a href="https://i.logisquebec.com/i-a-louer/1/42/thumbnail">'
+        '<img src="https://i.logisquebec.com/i-a-louer/9/77/other_jpg_c.jpg">'
+    )
+    assert _gallery(page, "42", ["https://i.logisquebec.com/i-a-louer/1/42/p1_jpg_a.jpg"]) == [
+        "https://i.logisquebec.com/i-a-louer/1/42/p1_jpg_a.jpg",
+        "https://i.logisquebec.com/i-a-louer/1/42/p2_jpg_b.jpg",
+    ]

@@ -283,6 +283,33 @@ class ListingGraphQlTests extends IntegrationTest {
 			.containsExactly("c1");
 	}
 
+
+	@Test
+	void aScrapeWithoutEnrichmentKeepsWhatAnEnrichedOneComputed() {
+		Map<String, Object> plain = with(duproprio("1", "Montréal", 1500.0), "address", "4202 rue Radisson");
+		Map<String, Object> enriched = with(plain, "latitude", 45.59, "longitude", -73.53, "locationPrecision",
+				"geocoded_address", "proximity", Map.of("nearest_metro", Map.of("name", "Radisson", "walk_minutes", 3.0)));
+		upsert(enriched);
+		clock.advance(Duration.ofHours(1));
+
+		upsert(plain).path("upsertListings.unchanged").entity(Integer.class).isEqualTo(1);
+		GraphQlTester.Response kept = graphQl
+			.document("{ listingByKey(source: \"duproprio\", externalId: \"1\") { latitude locationPrecision metroWalkMinutes proximity } }")
+			.execute();
+		kept.path("listingByKey.latitude").entity(Double.class).isEqualTo(45.59);
+		kept.path("listingByKey.locationPrecision").entity(String.class).isEqualTo("geocoded_address");
+		kept.path("listingByKey.metroWalkMinutes").entity(Double.class).isEqualTo(3.0);
+		graphQl.document("{ mapListings { id } }").execute().path("mapListings").entityList(Object.class).hasSize(1);
+
+		// A real change still goes through, and keeps the enrichment too.
+		upsert(with(plain, "price", 1400.0)).path("upsertListings.updated").entity(Integer.class).isEqualTo(1);
+		graphQl.document("{ listingByKey(source: \"duproprio\", externalId: \"1\") { metroWalkMinutes } }")
+			.execute()
+			.path("listingByKey.metroWalkMinutes")
+			.entity(Double.class)
+			.isEqualTo(3.0);
+	}
+
 	private Map<?, ?> benchmark(String externalId) {
 		return graphQl.document("query($e: String!) { listingByKey(source: \"duproprio\", externalId: $e) { priceBenchmark { scope area median sampleSize deltaPercent } } }")
 			.variable("e", externalId)

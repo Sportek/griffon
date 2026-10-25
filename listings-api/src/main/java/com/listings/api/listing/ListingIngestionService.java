@@ -110,6 +110,9 @@ public class ListingIngestionService {
 		for (ListingInput input : inputs) {
 			Document current = existing.get(input.key());
 			Document fields = fields(input);
+			if (current != null) {
+				keepEnrichment(fields, current);
+			}
 			String hash = contentHash(fields);
 			String duplicateKey = fields.getString(DuplicateDetector.KEY);
 			duplicateKeys.add(duplicateKey);
@@ -206,12 +209,40 @@ public class ListingIngestionService {
 		Document projection = new Document("source", 1).append("externalId", 1)
 			.append("contentHash", 1)
 			.append("price", 1)
-			.append(DuplicateDetector.KEY, 1);
+			.append(DuplicateDetector.KEY, 1)
+			.append("proximity", 1)
+			.append("latitude", 1)
+			.append("longitude", 1)
+			.append("locationPrecision", 1);
 		return collection().find(new Document("$or", or))
 			.projection(projection)
 			.into(new ArrayList<>())
 			.stream()
 			.collect(Collectors.toMap(d -> d.getString("source") + ":" + d.getString("externalId"), d -> d));
+	}
+
+	/**
+	 * A scrape run without enrichment sends neither proximity nor, for sources that publish
+	 * no coordinates (DuProprio), a position: what an enriched run computed earlier is kept
+	 * instead of being erased. A scrape that does send them replaces them as usual.
+	 */
+	static void keepEnrichment(Document fields, Document current) {
+		boolean keepPosition = fields.get("latitude") == null && fields.get("longitude") == null
+				&& current.get("latitude") != null && current.get("longitude") != null;
+		if (keepPosition) {
+			Double latitude = ((Number) current.get("latitude")).doubleValue();
+			Double longitude = ((Number) current.get("longitude")).doubleValue();
+			fields.append("latitude", latitude)
+				.append("longitude", longitude)
+				.append("locationPrecision", current.getString("locationPrecision"))
+				.append("location", new Document("type", "Point").append("coordinates", List.of(longitude, latitude)))
+				.append(Buildings.KEY, Buildings.key(fields.getString("address"), fields.getString("city"), latitude,
+						longitude, current.getString("locationPrecision")));
+		}
+		if (fields.get("proximity") == null && current.get("proximity") instanceof Document proximity) {
+			fields.append("proximity", proximity);
+			ProximityFacts.appendTo(fields, proximity);
+		}
 	}
 
 	private static Document fields(ListingInput in) {

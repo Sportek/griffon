@@ -78,7 +78,32 @@ def _discover_urls(client: httpx.Client, page_number: int) -> list[tuple[str, st
     return list(seen_on_page.items())
 
 
-def _fetch_detail(client: httpx.Client, url: str) -> dict | None:
+PHOTO_HOST = "https://photos.duproprio.com/"
+
+
+def _gallery(page: str, external_id: str) -> list[str]:
+    """Every photo of the listing, at 1600 px, in upload order.
+
+    The JSON-LD names a single image; the page's own photo data has the whole gallery.
+    Photos of the other listings the page recommends are left out: a listing's photos
+    sit under its own id in the path.
+    """
+    page = page.replace("\\/", "/")
+    pattern = re.compile(r"photos/public/for_rent/\d+/" + re.escape(external_id) + r"/[^\"'\s]*?-1600-(\d+)\.jpg")
+    found = {m.group(1): m.group(0) for m in pattern.finditer(page)}
+    return [PHOTO_HOST + found[k] for k in sorted(found, key=int)]
+
+
+def _primary_first(gallery: list[str], primary: str | None) -> list[str]:
+    """The cover photo the listing chose (the JSON-LD image) leads the gallery."""
+    if not primary:
+        return gallery
+    if primary in gallery:
+        return [primary, *(p for p in gallery if p != primary)]
+    return [primary, *gallery] if not gallery else gallery
+
+
+def _fetch_detail(client: httpx.Client, url: str, external_id: str) -> dict | None:
     resp = client.get(url)
     resp.raise_for_status()
     apartment, real_estate = None, None
@@ -93,7 +118,7 @@ def _fetch_detail(client: httpx.Client, url: str) -> dict | None:
             real_estate = data
     if not apartment:
         return None
-    return {"apartment": apartment, "real_estate": real_estate}
+    return {"apartment": apartment, "real_estate": real_estate, "photos": _gallery(resp.text, external_id)}
 
 
 def _to_listing(external_id: str, url: str, detail: dict) -> Listing:
@@ -133,7 +158,7 @@ def _to_listing(external_id: str, url: str, detail: dict) -> Listing:
         area_sqft=_parse_area_sqft(description),
         amenities=amenities,
         utilities_included=utilities,
-        photos=[a["image"]] if a.get("image") else [],
+        photos=_primary_first(detail.get("photos") or [], a.get("image")),
         description=description,
     )
 
@@ -156,7 +181,7 @@ def scrape(*, max_pages: int = 350, stale_page_limit: int = 5, delay_s: float = 
             for external_id, url in new_pairs:
                 seen_ids.add(external_id)
                 try:
-                    detail = _fetch_detail(client, url)
+                    detail = _fetch_detail(client, url, external_id)
                     if detail:
                         yield _to_listing(external_id, url, detail)
                 except Exception:

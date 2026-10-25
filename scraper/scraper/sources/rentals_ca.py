@@ -231,5 +231,5 @@ def scrape(
                         extra={"furnishing": unit["furnishing"]} if unit.get("furnishing") else {},
                         amenities=amenities,
                         utilities_included=utilities,
-                        photos=photos[:10],
+                        photos=photos,
                     )

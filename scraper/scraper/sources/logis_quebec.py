@@ -88,6 +88,20 @@ def _ld_listing(page_html: str) -> dict | None:
     return None
 
 
+def _gallery(page_html: str, external_id: str, first: list[str]) -> list[str]:
+    """Every full-size photo of the listing, the JSON-LD ones (10 at most) first.
+
+    The page shows the whole gallery, under the listing's own id in the path; thumbnails
+    and the photos of the other listings it recommends are left out.
+    """
+    pattern = re.compile(r"https://i\.logisquebec\.com/[^\"'\s)]*/" + re.escape(external_id) + r"/[^\"'\s)/]+\.(?:jpe?g|png|webp)", re.I)
+    photos = [u.replace(" ", "%20") for u in first]
+    for url in pattern.findall(page_html):
+        if "/thumbnail/" not in url and url not in photos:
+            photos.append(url)
+    return photos
+
+
 def _parse_detail(page_html: str, url: str, external_id: str, type_slug: str) -> Listing | None:
     ld = _ld_listing(page_html)
     if not ld:
@@ -165,7 +179,7 @@ def _parse_detail(page_html: str, url: str, external_id: str, type_slug: str) ->
         available_date=iso_date(available),
         amenities=amenities,
         utilities_included=utilities,
-        photos=[u.replace(" ", "%20") for u in ld.get("image") or []],
+        photos=_gallery(page_html, external_id, ld.get("image") or []),
         description=ld.get("description"),
         contact_name=clean_text(contact.text()) if contact else None,
         extra={k: v for k, v in extra.items() if v},
