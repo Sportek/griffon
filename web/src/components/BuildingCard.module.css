@@ -1,0 +1,146 @@
+.card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  background: var(--primary-background-color);
+  border: 1px solid var(--layout-border-color);
+  border-radius: var(--border-radius-medium);
+  transition:
+    border-color var(--motion-productive-medium) var(--motion-timing-transition),
+    box-shadow var(--motion-productive-medium) var(--motion-timing-transition);
+}
+
+.card:hover,
+.card[data-highlighted] {
+  border-color: var(--primary-color);
+  box-shadow: var(--box-shadow-small);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+
+.photo {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--border-radius-small);
+  background: var(--allgrey-background-color);
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.noPhoto {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--secondary-text-color);
+  font-size: 12px;
+}
+
+/* The count is the first thing that tells this card apart from a single listing. */
+.badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 8px;
+  border-radius: var(--border-radius-small);
+  background: var(--primary-color);
+  color: var(--text-color-on-primary, #ffffff);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.range {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.address {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.place,
+.mix,
+.meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--secondary-text-color);
+}
+
+.place {
+  color: var(--primary-text-color);
+}
+
+.meta {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 0;
+}
+
+.signal {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--border-radius-small);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.signal[data-kind="new"] {
+  background: var(--signal-new);
+}
+
+.signal[data-kind="drop"] {
+  background: var(--signal-drop);
+}
+
+.units {
+  border-top: 1px solid var(--layout-border-color);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 8px;
+  border-top: 1px solid var(--layout-border-color);
+}
+
+@media (max-width: 767px) {
+  .header {
+    grid-template-columns: 104px 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .range {
+    font-size: 17px;
+  }
+}

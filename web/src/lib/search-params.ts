@@ -30,6 +30,8 @@ export interface SearchState {
   retirees?: boolean;
   /** "Rechercher dans cette zone": the map viewport, south,west,north,east. */
   zone?: BoundingBox;
+  /** One card per listing instead of one per building. */
+  unites?: boolean;
   tri?: ListingSort;
 }
 
@@ -107,6 +109,7 @@ export function parseSearch(params: Params): SearchState {
     depuis: depuis === "24h" || depuis === "3j" || depuis === "7j" ? depuis : undefined,
     retirees: bool(read(params, "retirees")),
     zone: box(read(params, "zone")),
+    unites: bool(read(params, "unites")),
     tri: SORTS.some((s) => s.value === tri) ? tri : undefined,
   };
 }
@@ -135,6 +138,7 @@ const KEYS: Record<keyof SearchState, string> = {
   depuis: "depuis",
   retirees: "retirees",
   zone: "zone",
+  unites: "unites",
   tri: "tri",
 };
 

@@ -5,6 +5,7 @@ import type {
   FilterOptions,
   ListingDetail,
   ListingFilter,
+  ListingGroupPage,
   ListingPage,
   ListingSort,
   MapPoint,
@@ -48,7 +49,7 @@ async function gql<T>(query: string, variables: Record<string, unknown> = {}): P
 const TRACKING = `tracking { listingId favorite status notes visitAt hidden priceWhenTracked createdAt updatedAt }`;
 
 const SUMMARY = `
-  id source url title propertyType price pricePeriod address neighborhood city
+  id source url title propertyType price pricePeriod address unit neighborhood city
   latitude longitude locationPrecision bedrooms bathrooms areaSqft roomsQc
   furnished petsAllowed parkingSpots availableDate utilitiesIncluded photos
   metroWalkMinutes remWalkMinutes firstSeenAt lastSeenAt active inactiveSince
@@ -69,6 +70,22 @@ export async function searchListings(filter: ListingFilter, sort: ListingSort, p
   return data.listings;
 }
 
+export async function searchGroups(filter: ListingFilter, sort: ListingSort, page: number, size = 30) {
+  const data = await gql<{ listingGroups: ListingGroupPage }>(
+    `query($filter: ListingFilter, $sort: ListingSort, $page: Int, $size: Int) {
+      listingGroups(filter: $filter, sort: $sort, page: $page, size: $size) {
+        content {
+          key buildingKey address count totalInBuilding minPrice maxPrice minRoomsQc maxRoomsQc
+          listings { ${SUMMARY} }
+        }
+        page totalGroups totalListings hasNext
+      }
+    }`,
+    { filter, sort, page, size },
+  );
+  return data.listingGroups;
+}
+
 export async function countListings(filter: ListingFilter) {
   const data = await gql<{ listings: { totalElements: number } }>(
     `query($filter: ListingFilter) { listings(filter: $filter, size: 1) { totalElements } }`,
@@ -81,7 +98,7 @@ export async function mapListings(filter: ListingFilter, limit = 5000) {
   const data = await gql<{ mapListings: MapPoint[] }>(
     `query($filter: ListingFilter, $limit: Int) {
       mapListings(filter: $filter, limit: $limit) {
-        id latitude longitude price roomsQc bedrooms locationPrecision firstSeenAt
+        id latitude longitude price roomsQc bedrooms locationPrecision firstSeenAt buildingKey
       }
     }`,
     { filter, limit },
@@ -97,6 +114,7 @@ export async function getListing(id: string) {
         externalId listingType region postalCode yearBuilt smokingAllowed leaseTerm amenities
         description agencyName publishedAt updatedAt proximity
         priceBenchmark { scope area median sampleSize deltaPercent }
+        sameBuilding { ${SUMMARY} }
         duplicates { id source url price active lastSeenAt }
       }
     }`,
@@ -146,7 +164,7 @@ const SAVED_SEARCH = `
   filter {
     sources cities neighborhoods propertyTypes minPrice maxPrice minBedrooms minRoomsQc maxRoomsQc
     minAreaSqft minBathrooms minParkingSpots furnished petsAllowed smokingAllowed amenities
-    utilitiesIncluded hasPhotos text active excludeDuplicates excludeHidden maxTransitWalkMinutes
+    utilitiesIncluded hasPhotos text active excludeDuplicates excludeHidden maxTransitWalkMinutes buildingKeys
     nearbyCategories within { south west north east }
   }
 `;

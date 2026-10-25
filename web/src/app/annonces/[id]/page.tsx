@@ -12,14 +12,15 @@ import {
   formatPrice,
   formatRent,
   formatSize,
-  NEARBY_NAMES,
   propertyTypeName,
   sourceName,
 } from "@/lib/format";
-import type { ListingDetail, NearbyStation, PriceBenchmark } from "@/lib/types";
+import type { ListingDetail, PriceBenchmark } from "@/lib/types";
 import { Description } from "@/components/listing/Description";
 import { Gallery } from "@/components/listing/Gallery";
 import { PriceHistory } from "@/components/listing/PriceHistory";
+import { ProximityPanel } from "@/components/listing/ProximityPanel";
+import { SameBuilding } from "@/components/listing/SameBuilding";
 import { TrackingPanel } from "@/components/listing/TrackingPanel";
 import { ListingActions } from "@/components/listing/ListingActions";
 import { Signals } from "@/components/Signals";
@@ -43,14 +44,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 function yesNo(value: boolean | null, yes: string, no: string) {
   return value == null ? null : value ? yes : no;
-}
-
-const LINE_NAMES: Record<string, string> = { green: "verte", orange: "orange", yellow: "jaune", blue: "bleue" };
-
-function stationLine(station: NearbyStation) {
-  if (station.network === "rem") return "REM";
-  const lines = station.lines.map((l) => LINE_NAMES[l] ?? l);
-  return lines.length ? `ligne ${lines.join(", ")}` : "métro";
 }
 
 function benchmarkText(b: PriceBenchmark, sizeLabel: string | null) {
@@ -80,10 +73,6 @@ export default async function ListingPage({ params }: Params) {
   const size = formatSize(listing);
   const place = [listing.neighborhood, listing.city].filter(Boolean).join(", ");
   const proximity = listing.proximity;
-  const stations = [proximity?.nearest_metro, proximity?.nearest_rem].filter((s): s is NearbyStation => !!s);
-  const essentials = Object.entries(proximity?.essentials ?? {})
-    .filter(([, summary]) => summary.count > 0)
-    .sort(([, a], [, b]) => (a.nearest?.walk_minutes ?? 99) - (b.nearest?.walk_minutes ?? 99));
 
   const facts: [string, string | null][] = [
     ["Taille", size],
@@ -128,6 +117,7 @@ export default async function ListingPage({ params }: Params) {
           </p>
           <p className={styles.address}>
             {[listing.address, place, listing.postalCode].filter(Boolean).join(", ") || "Adresse non précisée"}
+            {listing.unit && !listing.address?.toLowerCase().includes(listing.unit) && ` (app. ${listing.unit})`}
             {listing.locationPrecision && listing.locationPrecision !== "exact" && (
               <span className={styles.approx}> · position approximative</span>
             )}
@@ -159,6 +149,15 @@ export default async function ListingPage({ params }: Params) {
             </dl>
           </section>
 
+          {listing.sameBuilding.length > 0 && (
+            <section className={styles.section} aria-labelledby="building-heading">
+              <h2 id="building-heading" className={styles.sectionTitle}>
+                Dans le même immeuble ({listing.sameBuilding.length} autre{listing.sameBuilding.length > 1 ? "s" : ""})
+              </h2>
+              <SameBuilding listings={listing.sameBuilding} />
+            </section>
+          )}
+
           <section className={styles.section} aria-labelledby="included-heading">
             <h2 id="included-heading" className={styles.sectionTitle}>
               Inclus et commodités
@@ -185,37 +184,7 @@ export default async function ListingPage({ params }: Params) {
             {!proximity ? (
               <p className={styles.subtle}>La proximité n&apos;a pas encore été calculée pour cette annonce.</p>
             ) : (
-              <>
-                {stations.length > 0 ? (
-                  <ul className={styles.stations}>
-                    {stations.map((s) => (
-                      <li key={s.name + s.network}>
-                        <span className={styles.stationDot} data-line={s.network === "rem" ? "rem" : s.lines[0]} aria-hidden />
-                        <span>
-                          <strong>{s.name}</strong> ({stationLine(s)})
-                        </span>
-                        <span className={styles.walk}>{Math.round(s.walk_minutes)} min à pied</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={styles.subtle}>Aucune station de métro ou de REM à distance de marche.</p>
-                )}
-                {essentials.length > 0 && (
-                  <ul className={styles.essentials}>
-                    {essentials.map(([category, summary]) => (
-                      <li key={category}>
-                        <span>{NEARBY_NAMES[category] ?? category}</span>
-                        <span className={styles.walk}>
-                          {summary.nearest
-                            ? `${summary.nearest.name ?? "la plus proche"} · ${Math.round(summary.nearest.walk_minutes)} min`
-                            : `${summary.count} à pied`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
+              <ProximityPanel proximity={proximity} latitude={listing.latitude} longitude={listing.longitude} />
             )}
           </section>
 

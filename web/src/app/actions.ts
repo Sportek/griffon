@@ -8,6 +8,7 @@ import {
   deleteSavedSearch,
   getListing,
   mapListings,
+  searchGroups,
   searchListings,
   updateSavedSearch,
   updateTracking,
@@ -15,7 +16,16 @@ import {
   type TrackingInput,
 } from "@/lib/api";
 import { toAlertFilter, toFilter, type SearchState } from "@/lib/search-params";
-import type { BoundingBox, ListingPage, ListingSummary, MapPoint, SavedSearch, Tracking } from "@/lib/types";
+import { asGroups } from "@/lib/groups";
+import type {
+  BoundingBox,
+  ListingGroup,
+  ListingGroupPage,
+  ListingSummary,
+  MapPoint,
+  SavedSearch,
+  Tracking,
+} from "@/lib/types";
 
 /** Server actions return errors as values: a thrown error loses its message in production. */
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -29,8 +39,21 @@ async function attempt<T>(run: () => Promise<T>): Promise<Result<T>> {
   }
 }
 
-export async function loadPage(state: SearchState, page: number): Promise<Result<ListingPage>> {
-  return attempt(() => searchListings(toFilter(state), state.tri ?? "NEWEST", page));
+/** One page of the search: one item per building, or per listing with `unites`. */
+export async function loadPage(state: SearchState, page: number): Promise<Result<ListingGroupPage>> {
+  return attempt(async () =>
+    state.unites
+      ? asGroups(await searchListings(toFilter(state), state.tri ?? "NEWEST", page))
+      : searchGroups(toFilter(state), state.tri ?? "NEWEST", page),
+  );
+}
+
+/** A building pin's group, when it is not in the loaded pages of the list. */
+export async function loadGroup(state: SearchState, buildingKey: string): Promise<Result<ListingGroup | null>> {
+  return attempt(async () => {
+    const page = await searchGroups({ ...toFilter(state), buildingKeys: [buildingKey] }, "PRICE_ASC", 0, 1);
+    return page.content[0] ?? null;
+  });
 }
 
 export async function loadMapPoints(state: SearchState, within?: BoundingBox): Promise<Result<MapPoint[]>> {

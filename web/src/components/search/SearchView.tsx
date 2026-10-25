@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { Button, EmptyState, Loader } from "@vibe/core";
 import { Gallery, Location } from "@vibe/icons";
 
-import { loadListingSummary, loadPage } from "@/app/actions";
+import { loadGroup, loadListingSummary, loadPage } from "@/app/actions";
+import { single } from "@/lib/groups";
 import { toQueryString, type SearchState } from "@/lib/search-params";
 import type { Suggestion } from "@/lib/suggest";
-import type { BoundingBox, FilterOptions, ListingPage, ListingSummary, MapPoint } from "@/lib/types";
+import type { BoundingBox, FilterOptions, ListingGroup, ListingGroupPage, ListingSummary, MapPoint } from "@/lib/types";
+import { BuildingCard } from "../BuildingCard";
 import { ListingCard } from "../ListingCard";
 import { useToast } from "../ToastProvider";
 import { AdvancedFilters } from "./AdvancedFilters";
@@ -64,7 +66,7 @@ export function SearchView({
   error,
 }: {
   state: SearchState;
-  page: ListingPage;
+  page: ListingGroupPage;
   points: MapPoint[];
   options: FilterOptions;
   suggestion: Suggestion | null;
@@ -74,13 +76,13 @@ export function SearchView({
   const toast = useToast();
   const [pending, startTransition] = useTransition();
   const [loadingMore, startLoadingMore] = useTransition();
-  const [listings, setListings] = useState(page.content);
+  const [groups, setGroups] = useState(page.content);
   const [currentPage, setCurrentPage] = useState(page);
   const [lastPage, setLastPage] = useState(page);
   const [view, setView] = useState<"list" | "map">("list");
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [preview, setPreview] = useState<ListingSummary | null>(null);
+  const [preview, setPreview] = useState<ListingGroup | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -89,7 +91,7 @@ export function SearchView({
   // A new search from the server replaces the list (and the extra pages loaded so far).
   if (page !== lastPage) {
     setLastPage(page);
-    setListings(page.content);
+    setGroups(page.content);
     setCurrentPage(page);
     setSelected(null);
     setPreview(null);
@@ -113,21 +115,22 @@ export function SearchView({
         return;
       }
       setCurrentPage(result.value);
-      setListings((current) => {
-        const known = new Set(current.map((l) => l.id));
-        return [...current, ...result.value.content.filter((l) => !known.has(l.id))];
+      setGroups((current) => {
+        const known = new Set(current.map((g) => g.key));
+        return [...current, ...result.value.content.filter((g) => !known.has(g.key))];
       });
     });
   }
 
-  async function select(id: string | null) {
-    setSelected(id);
-    if (!id) {
+  /** A pin is a building (its key) or a listing alone (its id), like the list's items. */
+  async function select(key: string | null) {
+    setSelected(key);
+    if (!key) {
       setPreview(null);
       return;
     }
-    const inList = listings.find((l) => l.id === id);
-    const card = listRef.current?.querySelector(`[data-listing="${id}"]`);
+    const inList = groups.find((g) => g.key === key);
+    const card = listRef.current?.querySelector(`[data-group="${CSS.escape(key)}"]`);
     if (card && window.matchMedia("(min-width: 1024px)").matches) {
       card.scrollIntoView({ block: "nearest", behavior: "smooth" });
       setPreview(null);
@@ -137,19 +140,23 @@ export function SearchView({
       setPreview(inList);
       return;
     }
-    const result = await loadListingSummary(id);
-    if (result.ok && result.value) setPreview(result.value);
+    if (/^[a-f0-9]{24}$/.test(key)) {
+      const result = await loadListingSummary(key);
+      if (result.ok && result.value) setPreview(single(result.value));
+    } else {
+      const result = await loadGroup(state, key);
+      if (result.ok && result.value) setPreview(result.value);
+    }
   }
 
   function searchArea(zone: BoundingBox) {
     navigate({ ...state, zone });
   }
 
-  const favoriteChanged = (id: string, favorite: boolean) =>
-    setListings((current) =>
-      current.map((l) =>
-        l.id === id
-          ? {
+  const withFavorite = (l: ListingSummary, id: string, favorite: boolean): ListingSummary =>
+    l.id !== id
+      ? l
+      : {
               ...l,
               tracking: l.tracking
                 ? { ...l.tracking, favorite }
@@ -164,13 +171,16 @@ export function SearchView({
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                   },
-            }
-          : l,
-      ),
+        };
+
+  const favoriteChanged = (id: string, favorite: boolean) =>
+    setGroups((current) =>
+      current.map((g) => ({ ...g, listings: g.listings.map((l) => withFavorite(l, id, favorite)) })),
     );
 
   const located = points.length;
-  const total = currentPage.totalElements;
+  const total = currentPage.totalListings;
+  const buildings = groups.filter((g) => g.count > 1).length;
 
   return (
     <div className={styles.view} data-view={view}>
@@ -193,10 +203,18 @@ export function SearchView({
                 <Loader size={16} />
               ) : (
                 <>
+                  {!state.unites && currentPage.totalGroups < total
+                    ? `${currentPage.totalGroups.toLocaleString("fr-CA")} adresses · `
+                    : ""}
                   toutes sources, sans doublons · {located.toLocaleString("fr-CA")} sur la carte
                 </>
               )}
             </span>
+            {(state.unites || buildings > 0) && (
+              <Button size="xs" kind="tertiary" onClick={() => change({ unites: state.unites ? undefined : true })}>
+                {state.unites ? "Regrouper par immeuble" : "Voir chaque logement"}
+              </Button>
+            )}
             {state.zone && (
               <Button size="xs" kind="tertiary" onClick={() => change({ zone: undefined })}>
                 Retirer la zone de carte
@@ -211,7 +229,7 @@ export function SearchView({
               description={error}
               mainAction={{ text: "Réessayer", onClick: () => router.refresh() }}
             />
-          ) : listings.length === 0 ? (
+          ) : groups.length === 0 ? (
             <EmptyState
               className={styles.empty}
               title="Aucune annonce ne correspond"
@@ -224,11 +242,11 @@ export function SearchView({
             />
           ) : (
             <ol className={styles.list}>
-              {listings.map((listing) => (
-                <li key={listing.id} data-listing={listing.id}>
-                  <ListingCard
-                    listing={listing}
-                    highlighted={selected === listing.id || hovered === listing.id}
+              {groups.map((group) => (
+                <li key={group.key} data-group={group.key}>
+                  <SearchItem
+                    group={group}
+                    highlighted={selected === group.key || hovered === group.key}
                     seenBefore={lastVisit}
                     onHover={setHovered}
                     onFavoriteChange={favoriteChanged}
@@ -241,7 +259,7 @@ export function SearchView({
           {currentPage.hasNext && (
             <div className={styles.more}>
               <Button kind="secondary" onClick={loadMore} loading={loadingMore}>
-                Afficher plus d&apos;annonces
+                {state.unites ? "Afficher plus d'annonces" : "Afficher plus d'adresses"}
               </Button>
             </div>
           )}
@@ -258,7 +276,7 @@ export function SearchView({
           />
           {preview && (
             <div className={styles.preview}>
-              <ListingCard listing={preview} seenBefore={lastVisit} onFavoriteChange={favoriteChanged} />
+              <SearchItem group={preview} seenBefore={lastVisit} onFavoriteChange={favoriteChanged} />
             </div>
           )}
         </section>
@@ -291,4 +309,18 @@ export function SearchView({
       {alertOpen && <SaveAlertModal open state={state} onClose={() => setAlertOpen(false)} />}
     </div>
   );
+}
+
+/** A building with several matching units, or a listing on its own. */
+function SearchItem({
+  group,
+  ...props
+}: {
+  group: ListingGroup;
+  highlighted?: boolean;
+  seenBefore?: string | null;
+  onHover?: (key: string | null) => void;
+  onFavoriteChange?: (id: string, favorite: boolean) => void;
+}) {
+  return group.count > 1 ? <BuildingCard group={group} {...props} /> : <ListingCard listing={group.listings[0]} {...props} />;
 }

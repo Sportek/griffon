@@ -1,0 +1,80 @@
+.units {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 12px;
+}
+
+.unit + .unit {
+  border-top: 1px solid var(--layout-border-color);
+}
+
+.unit[data-inactive] .link {
+  opacity: 0.55;
+}
+
+.link {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 0;
+  color: var(--primary-text-color);
+  text-decoration: none;
+}
+
+.link:hover .price {
+  color: var(--primary-color);
+}
+
+.size {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.details {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.price {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aside {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* On a phone the signals move under the row's text rather than squeezing the price. */
+@media (max-width: 767px) {
+  .unit {
+    flex-wrap: wrap;
+    padding-bottom: 6px;
+  }
+
+  .link {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    padding-bottom: 4px;
+  }
+
+  .aside {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

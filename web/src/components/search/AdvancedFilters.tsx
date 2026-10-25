@@ -243,7 +243,7 @@ export function AdvancedFilters({
                   />
                 ))}
               </div>
-              <p className={styles.hint}>Seulement pour les annonces enrichies (environ 10 min à pied).</p>
+              <p className={styles.hint}>Au moins un à 15 min à pied ou moins. Seulement pour les annonces dont la proximité a été calculée.</p>
             </section>
 
             <section className={styles.section}>

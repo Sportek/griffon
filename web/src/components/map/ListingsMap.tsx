@@ -49,21 +49,38 @@ function stationsGeoJson(): GeoJSON.FeatureCollection {
   };
 }
 
+/**
+ * One pin per building, like the list: the units of a building share an entrance, and
+ * stacked pins at one point could not be told apart or clicked. The pin's key is the
+ * building key, or the listing id for a listing alone.
+ */
 function pointsGeoJson(points: MapPoint[]): GeoJSON.FeatureCollection {
   const now = Date.now();
+  const byKey = new Map<string, MapPoint[]>();
+  for (const p of points) {
+    const key = p.buildingKey ?? p.id;
+    byKey.set(key, [...(byKey.get(key) ?? []), p]);
+  }
   return {
     type: "FeatureCollection",
-    features: points.map((p) => ({
-      type: "Feature",
-      id: p.id,
-      geometry: { type: "Point", coordinates: [p.longitude, p.latitude] },
-      properties: {
-        id: p.id,
-        label: shortPrice(p.price),
-        pin: isNew(p.firstSeenAt, now) ? "pin-new" : "pin",
-        approximate: p.locationPrecision != null && p.locationPrecision !== "exact",
-      },
-    })),
+    features: [...byKey.entries()].map(([key, members]) => {
+      const first = members[0];
+      const prices = members.map((m) => m.price).filter((v): v is number => v != null);
+      const fresh = members.some((m) => isNew(m.firstSeenAt, now));
+      const building = members.length > 1;
+      const cheapest = prices.length ? Math.min(...prices) : null;
+      return {
+        type: "Feature" as const,
+        id: key,
+        geometry: { type: "Point" as const, coordinates: [first.longitude, first.latitude] },
+        properties: {
+          id: key,
+          label: building ? `${members.length} log. · ${shortPrice(cheapest)}+` : shortPrice(first.price),
+          pin: fresh ? "pin-new" : building ? "pin-building" : "pin",
+          approximate: members.every((m) => m.locationPrecision != null && m.locationPrecision !== "exact"),
+        },
+      };
+    }),
   };
 }
 
@@ -80,6 +97,7 @@ function addLayers(map: MapLibreMap, dark: boolean) {
   addPinImages(map, {
     pin: { fill: dark ? "#30324e" : "#ffffff", stroke: dark ? "#797e93" : "#c3c6d4" },
     "pin-new": { fill: "#00854d", stroke: "#00854d" },
+    "pin-building": { fill: dark ? "#30324e" : "#ffffff", stroke: "#0073ea" },
     "pin-active": { fill: "#0073ea", stroke: "#0073ea" },
   });
 
@@ -369,6 +387,9 @@ export function ListingsMap({
       <div className={styles.legend} aria-hidden>
         <span className={styles.legendItem}>
           <span className={styles.swatch} data-kind="new" /> Nouveau (48 h)
+        </span>
+        <span className={styles.legendItem}>
+          <span className={styles.swatch} data-kind="building" /> Plusieurs logements
         </span>
         <span className={styles.legendItem}>
           <span className={styles.swatch} data-kind="approx" /> Position approximative

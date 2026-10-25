@@ -5,8 +5,8 @@ Cahier des charges : [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md).
 
 | Page | Contenu |
 |---|---|
-| `/` | Recherche : critères essentiels, filtres avancés, liste et carte synchronisées, « M'alerter » |
-| `/annonces/[id]` | Fiche : photos, essentiel, inclus, proximité métro/REM et commerces, historique du prix, repère de prix du quartier, doublons des autres sites, suivi |
+| `/` | Recherche : critères essentiels, filtres avancés, liste et carte synchronisées, logements regroupés par immeuble (ou un par un avec `unites=1`), « M'alerter » |
+| `/annonces/[id]` | Fiche : photos, essentiel, autres logements de l'immeuble, inclus, proximité (stations et les 10 lieux les plus proches par catégorie, avec carte), historique du prix, repère de prix du quartier, doublons des autres sites, suivi |
 | `/suivi` | Tableau des démarches par statut (À contacter → Obtenu), liste, annonces masquées |
 | `/alertes` | Recherches sauvegardées (pause, Discord) et dernières annonces trouvées |
 

@@ -46,6 +46,7 @@ export interface ListingFilter {
   active?: boolean;
   excludeDuplicates?: boolean;
   excludeHidden?: boolean;
+  buildingKeys?: string[];
   within?: BoundingBox;
   maxTransitWalkMinutes?: number;
   nearbyCategories?: string[];
@@ -77,6 +78,8 @@ export interface ListingSummary {
   price: number | null;
   pricePeriod: "MONTHLY" | "YEARLY" | "UNKNOWN";
   address: string | null;
+  /** Apartment number parsed from the address ("1804"), when the source gives one. */
+  unit: string | null;
   neighborhood: string | null;
   city: string | null;
   latitude: number | null;
@@ -107,20 +110,39 @@ export interface NearbyStation {
   name: string;
   network: "metro" | "rem";
   lines: string[];
+  latitude: number;
+  longitude: number;
+  walk_distance_m: number;
   walk_minutes: number;
 }
 
+/** One place of the scraper's enrichment (snake_case, as stored). */
 export interface NearbyPlace {
   name: string | null;
   category: string;
+  /** Raw OpenStreetMap tag value: supermarket, greengrocer, convenience, dry_cleaning... */
+  kind: string | null;
+  brand: string | null;
+  latitude: number;
+  longitude: number;
+  walk_distance_m: number;
   walk_minutes: number;
 }
 
+export interface CategorySummary {
+  /** Places within the walking limit, all of them. */
+  count: number;
+  nearest?: NearbyPlace | null;
+  /** The closest ones, nearest first, capped by the scraper (10). */
+  places?: NearbyPlace[];
+}
+
 export interface Proximity {
+  max_walk_minutes?: number;
   nearest_metro?: NearbyStation | null;
   nearest_rem?: NearbyStation | null;
   stations_within_walk?: NearbyStation[];
-  essentials?: Record<string, { count: number; nearest?: NearbyPlace | null }>;
+  essentials?: Record<string, CategorySummary>;
 }
 
 export interface PriceBenchmark {
@@ -146,6 +168,7 @@ export interface ListingDetail extends Omit<ListingSummary, "duplicates"> {
   updatedAt: string;
   proximity: Proximity | null;
   priceBenchmark: PriceBenchmark | null;
+  sameBuilding: ListingSummary[];
   duplicates: {
     id: string;
     source: string;
@@ -166,6 +189,7 @@ export interface ListingPage {
 
 export interface MapPoint {
   id: string;
+  buildingKey: string | null;
   latitude: number;
   longitude: number;
   price: number | null;
@@ -173,6 +197,30 @@ export interface MapPoint {
   bedrooms: number | null;
   locationPrecision: string | null;
   firstSeenAt: string;
+}
+
+/** The matching units of one building, or a listing alone. */
+export interface ListingGroup {
+  /** The building key, or the listing id for a listing alone (as on the map). */
+  key: string;
+  buildingKey: string | null;
+  address: string | null;
+  count: number;
+  totalInBuilding: number;
+  minPrice: number | null;
+  maxPrice: number | null;
+  minRoomsQc: number | null;
+  maxRoomsQc: number | null;
+  /** Cheapest first. */
+  listings: ListingSummary[];
+}
+
+export interface ListingGroupPage {
+  content: ListingGroup[];
+  page: number;
+  totalGroups: number;
+  totalListings: number;
+  hasNext: boolean;
 }
 
 export interface FilterOptions {
