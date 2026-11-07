@@ -25,9 +25,11 @@ listings:
     sweep-cron: "0 0 * * * *"
     # A listing not returned by the scraper for this long is flagged inactive.
     stale-after: ${INACTIVITY_STALE_AFTER:3d}
-    # Per-source overrides, e.g. for sources scraped less often:
-    # stale-after-by-source:
-    #   realtor_ca: 7d
+    # Per-source overrides, e.g. for sources scraped less often (realtor_ca: 7d).
+    stale-after-by-source:
+      # Facebook group posts are sent once (the scraper stops at posts it has already seen),
+      # so lastSeenAt is the first sighting: retire them after a month.
+      facebook: ${INACTIVITY_STALE_AFTER_FACEBOOK:30d}
   scheduler:
     # Turns due scrapeSchedules into QUEUED runs for the workers (checked every minute).
     enabled: ${SCHEDULER_ENABLED:true}

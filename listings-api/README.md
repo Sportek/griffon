@@ -62,6 +62,8 @@ mutation {
   c: saveScrapeSchedule(input: { source: "centris",      cron: "0 0 6 * * *" }) { nextRunAt }
   d: saveScrapeSchedule(input: { source: "logis_quebec", cron: "0 0 8 * * *" }) { nextRunAt }
   e: saveScrapeSchedule(input: { source: "rentals_ca",   cron: "0 0 10 * * *", params: { areas: ["montreal", "laval"] } }) { nextRunAt }
+  # Trois passages par jour, petits plafonds ; jamais markUnseenInactive (expiration après 30 jours).
+  f: saveScrapeSchedule(input: { source: "facebook",     cron: "0 40 8,14,21 * * *", params: { enrich: true } }) { nextRunAt }
 }
 mutation { triggerScrape(source: "kijiji", params: { limit: 50 }) { id status } }   # lancer maintenant
 { ingestionRuns(limit: 10) { source status trigger worker queuedAt startedAt finishedAt received created error } }
