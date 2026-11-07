@@ -42,5 +42,31 @@ public record ListingFilter(
 		Double maxTransitWalkMinutes,
 		List<String> nearbyCategories,
 		Boolean excludeHidden,
-		List<String> buildingKeys) {
+		List<String> buildingKeys,
+		Integer maxYearBuilt,
+		Double minLotAreaSqft,
+		Double maxCondoFeesMonthly,
+		Integer minUnits) {
+
+	/** This filter restricted to one listing type (the other criteria unchanged). */
+	public ListingFilter withListingType(ListingType type) {
+		return new ListingFilter(sources, cities, neighborhoods, region, postalCodePrefix, type, propertyTypes, minPrice,
+				maxPrice, minBedrooms, maxBedrooms, minBathrooms, minRoomsQc, maxRoomsQc, minAreaSqft, maxAreaSqft,
+				minYearBuilt, minParkingSpots, furnished, petsAllowed, smokingAllowed, amenities, utilitiesIncluded,
+				hasPhotos, text, firstSeenAfter, firstSeenBefore, lastSeenAfter, active, excludeDuplicates, near, within,
+				maxMetroWalkMinutes, maxRemWalkMinutes, maxTransitWalkMinutes, nearbyCategories, excludeHidden,
+				buildingKeys, maxYearBuilt, minLotAreaSqft, maxCondoFeesMonthly, minUnits);
+	}
+
+	/**
+	 * Saved searches predate properties for sale: one without a listing type was a rental
+	 * search, and must not start alerting on houses for sale.
+	 */
+	public static ListingFilter rentalsUnlessTyped(ListingFilter filter) {
+		if (filter == null || filter.listingType() != null) {
+			return filter;
+		}
+		return filter.withListingType(ListingType.RENT);
+	}
+
 }

@@ -2,10 +2,12 @@ import type { BoundingBox, ListingFilter, ListingSort } from "./types";
 
 /**
  * The search lives in the URL, in short French keys, so a search can be bookmarked or
- * shared. Every key is optional; an empty URL is "everything still online, without
- * duplicates or hidden listings, newest first".
+ * shared. Every key is optional; an empty URL is "every rental still online, without
+ * duplicates or hidden listings, newest first". `offre=vente` switches to properties for sale.
  */
 export interface SearchState {
+  /** Properties for sale instead of rentals (the default). */
+  offre?: "vente";
   q?: string;
   prixMin?: number;
   prixMax?: number;
@@ -25,6 +27,14 @@ export interface SearchState {
   sources?: string[];
   superficie?: number;
   sdb?: number;
+  /** For sale: built in this year or later. */
+  annee?: number;
+  /** For sale: minimum lot area, ft². */
+  terrain?: number;
+  /** For sale: maximum condo fees, $ a month. */
+  frais?: number;
+  /** For sale: minimum number of dwellings (plexes). */
+  logements?: number;
   photos?: boolean;
   depuis?: "24h" | "3j" | "7j";
   retirees?: boolean;
@@ -86,6 +96,7 @@ export function parseSearch(params: Params): SearchState {
   const depuis = read(params, "depuis");
   const tri = read(params, "tri") as ListingSort | undefined;
   return {
+    offre: read(params, "offre") === "vente" ? "vente" : undefined,
     q: read(params, "q")?.trim() || undefined,
     prixMin: num(read(params, "prix_min")),
     prixMax: num(read(params, "prix_max")),
@@ -105,6 +116,10 @@ export function parseSearch(params: Params): SearchState {
     sources: list(read(params, "sources")),
     superficie: num(read(params, "superficie")),
     sdb: num(read(params, "sdb")),
+    annee: num(read(params, "annee")),
+    terrain: num(read(params, "terrain")),
+    frais: num(read(params, "frais")),
+    logements: num(read(params, "logements")),
     photos: bool(read(params, "photos")),
     depuis: depuis === "24h" || depuis === "3j" || depuis === "7j" ? depuis : undefined,
     retirees: bool(read(params, "retirees")),
@@ -115,6 +130,7 @@ export function parseSearch(params: Params): SearchState {
 }
 
 const KEYS: Record<keyof SearchState, string> = {
+  offre: "offre",
   q: "q",
   prixMin: "prix_min",
   prixMax: "prix_max",
@@ -134,6 +150,10 @@ const KEYS: Record<keyof SearchState, string> = {
   sources: "sources",
   superficie: "superficie",
   sdb: "sdb",
+  annee: "annee",
+  terrain: "terrain",
+  frais: "frais",
+  logements: "logements",
   photos: "photos",
   depuis: "depuis",
   retirees: "retirees",
@@ -164,22 +184,47 @@ export function toQueryString(state: SearchState): string {
 
 const SINCE_HOURS = { "24h": 24, "3j": 72, "7j": 168 } as const;
 
+export function isSale(state: SearchState): boolean {
+  return state.offre === "vente";
+}
+
+/** Criteria that only mean something for one kind of offer. */
+const RENT_ONLY: (keyof SearchState)[] = ["tailleMin", "tailleMax", "animaux", "meuble", "services"];
+const SALE_ONLY: (keyof SearchState)[] = ["annee", "terrain", "frais", "logements"];
+
+/**
+ * Switching between rentals and properties for sale: a rent budget means nothing for a house,
+ * so the price range goes, with the criteria of the kind left behind. Places, transit, dates
+ * and the map zone stay.
+ */
+export function switchOffer(state: SearchState, sale: boolean): SearchState {
+  if (sale === isSale(state)) return state;
+  const cleared = Object.fromEntries([...(sale ? RENT_ONLY : SALE_ONLY), "prixMin", "prixMax"].map((k) => [k, undefined]));
+  return { ...state, ...cleared, offre: sale ? "vente" : undefined };
+}
+
 export function toFilter(state: SearchState, now = Date.now()): ListingFilter {
+  const sale = isSale(state);
   return {
+    listingType: sale ? "SALE" : "RENT",
     text: state.q,
     minPrice: state.prixMin,
     maxPrice: state.prixMax,
-    minRoomsQc: state.tailleMin,
-    maxRoomsQc: state.tailleMax,
+    minRoomsQc: sale ? undefined : state.tailleMin,
+    maxRoomsQc: sale ? undefined : state.tailleMax,
     minBedrooms: state.chambres,
     neighborhoods: state.quartiers,
     cities: state.villes,
     maxTransitWalkMinutes: state.metro,
     nearbyCategories: state.commerces,
-    petsAllowed: state.animaux,
-    furnished: state.meuble,
+    petsAllowed: sale ? undefined : state.animaux,
+    furnished: sale ? undefined : state.meuble,
     minParkingSpots: state.stationnement ? 1 : undefined,
-    utilitiesIncluded: state.services,
+    utilitiesIncluded: sale ? undefined : state.services,
+    minYearBuilt: sale ? state.annee : undefined,
+    minLotAreaSqft: sale ? state.terrain : undefined,
+    maxCondoFeesMonthly: sale ? state.frais : undefined,
+    minUnits: sale ? state.logements : undefined,
     amenities: state.commodites,
     propertyTypes: state.types,
     sources: state.sources,
@@ -205,6 +250,7 @@ export function toAlertFilter(state: SearchState): ListingFilter {
 /** Back from a saved search's filter to the URL state, to open the alert as a search. */
 export function fromFilter(filter: ListingFilter): SearchState {
   return {
+    offre: filter.listingType === "SALE" ? "vente" : undefined,
     q: filter.text ?? undefined,
     prixMin: filter.minPrice ?? undefined,
     prixMax: filter.maxPrice ?? undefined,
@@ -224,6 +270,10 @@ export function fromFilter(filter: ListingFilter): SearchState {
     sources: filter.sources ?? undefined,
     superficie: filter.minAreaSqft ?? undefined,
     sdb: filter.minBathrooms ?? undefined,
+    annee: filter.minYearBuilt ?? undefined,
+    terrain: filter.minLotAreaSqft ?? undefined,
+    frais: filter.maxCondoFeesMonthly ?? undefined,
+    logements: filter.minUnits ?? undefined,
     photos: filter.hasPhotos ?? undefined,
     retirees: filter.active === true ? undefined : true,
     zone: filter.within ?? undefined,
@@ -243,11 +293,16 @@ export function countAdvanced(state: SearchState): number {
     "sources",
     "superficie",
     "sdb",
+    "annee",
+    "terrain",
+    "frais",
+    "logements",
     "photos",
     "retirees",
-    "chambres",
     "villes",
   ];
+  // For sale, bedrooms sit in the bar (where the Québec size is for rentals).
+  if (!isSale(state)) advanced.push("chambres");
   return advanced.filter((key) => {
     const value = state[key];
     return value !== undefined && !(Array.isArray(value) && value.length === 0);

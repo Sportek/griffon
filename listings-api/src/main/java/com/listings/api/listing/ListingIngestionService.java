@@ -137,11 +137,18 @@ public class ListingIngestionService {
 				if (!fields.containsKey("location")) {
 					unset.append("location", "");
 				}
+				SALE_FIELDS.stream().filter(key -> !fields.containsKey(key)).forEach(key -> unset.append(key, ""));
 				Double previousPrice = (current == null) ? null : current.getDouble("price");
 				boolean priceChanged = input.price() != null && !Objects.equals(input.price(), previousPrice);
 				Document onInsert = new Document("firstSeenAt", now);
 				if (current == null) {
 					onInsert.append("priceHistory", priceChanged ? List.of(pricePoint(input.price(), now)) : List.of());
+				}
+				else if (typeChanged(current, input)) {
+					// A rent and an asking price are not comparable: the history starts over, and
+					// going from one to the other is no price drop.
+					set.append("priceHistory",
+							(input.price() != null) ? List.of(pricePoint(input.price(), now)) : List.of());
 				}
 				else if (priceChanged) {
 					update.append("$push", new Document("priceHistory", pricePoint(input.price(), now)));
@@ -178,12 +185,25 @@ public class ListingIngestionService {
 		}
 	}
 
+	private static boolean typeChanged(Document current, ListingInput input) {
+		String stored = current.getString("listingType");
+		return stored != null && !stored.equals(input.listingType().name());
+	}
+
+	/**
+	 * @param expectedSource the run source when the batch belongs to an ingestion run: the
+	 * listings must be of its source and of its kind ({@code centris_sale} only takes SALE
+	 * listings of source {@code centris}, see {@link RunScope})
+	 */
 	private static String validate(ListingInput input, String expectedSource) {
 		if (isBlank(input.source()) || isBlank(input.externalId()) || isBlank(input.url())) {
 			return "source, externalId and url must not be blank";
 		}
-		if (expectedSource != null && !expectedSource.equals(input.source())) {
-			return "source " + input.source() + " does not match the ingestion run source " + expectedSource;
+		if (expectedSource != null) {
+			String rejection = RunScope.of(expectedSource).rejection(input);
+			if (rejection != null) {
+				return rejection;
+			}
 		}
 		if (input.latitude() != null && Math.abs(input.latitude()) > 90) {
 			return "latitude out of range: " + input.latitude();
@@ -209,6 +229,7 @@ public class ListingIngestionService {
 		Document projection = new Document("source", 1).append("externalId", 1)
 			.append("contentHash", 1)
 			.append("price", 1)
+			.append("listingType", 1)
 			.append(DuplicateDetector.KEY, 1)
 			.append("proximity", 1)
 			.append("latitude", 1)
@@ -285,10 +306,26 @@ public class ListingIngestionService {
 			.append("publishedAt", in.publishedAt())
 			.append("extra", Keys.safeFieldNames(in.extra()))
 			.append("proximity", Keys.safeFieldNames(in.proximity()))
-			.append(DuplicateDetector.KEY, DuplicateDetector.key(in.address(), in.bedrooms()))
+			.append(DuplicateDetector.KEY, DuplicateDetector.key(in.address(), in.bedrooms(), in.listingType()))
 			.append(DuplicateDetector.UNIT, DuplicateDetector.unit(in.address()))
 			.append(Buildings.KEY,
 					Buildings.key(in.address(), in.city(), in.latitude(), in.longitude(), in.locationPrecision()));
+		Map<String, Object> sale = new LinkedHashMap<>();
+		sale.put("lotAreaSqft", in.lotAreaSqft());
+		sale.put("municipalAssessment", in.municipalAssessment());
+		sale.put("municipalAssessmentYear", in.municipalAssessmentYear());
+		sale.put("municipalTaxesYearly", in.municipalTaxesYearly());
+		sale.put("schoolTaxesYearly", in.schoolTaxesYearly());
+		sale.put("condoFeesMonthly", in.condoFeesMonthly());
+		sale.put("units", in.units());
+		sale.put("grossRevenueYearly", in.grossRevenueYearly());
+		// Only when known: rentals never have them, and a null here would change the content
+		// hash of every listing stored before these fields existed.
+		sale.forEach((key, value) -> {
+			if (value != null) {
+				doc.append(key, value);
+			}
+		});
 		ProximityFacts.appendTo(doc, in.proximity());
 		if (in.latitude() != null && in.longitude() != null) {
 			doc.append("location",
@@ -296,6 +333,10 @@ public class ListingIngestionService {
 		}
 		return doc;
 	}
+
+	/** Stored only when the source gives them (see {@link #fields}). */
+	static final List<String> SALE_FIELDS = List.of("lotAreaSqft", "municipalAssessment", "municipalAssessmentYear",
+			"municipalTaxesYearly", "schoolTaxesYearly", "condoFeesMonthly", "units", "grossRevenueYearly");
 
 	private static Document pricePoint(Double price, Instant at) {
 		return new Document("price", price).append("observedAt", at);

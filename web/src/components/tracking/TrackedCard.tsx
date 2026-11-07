@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@vibe/core";
 import { Show } from "@vibe/icons";
 
-import { formatDateTime, formatPrice, formatRent, formatSize, sourceName } from "@/lib/format";
+import { formatDateTime, formatPrice, formatRent, formatSize, isForSale, saleFacts, sourceName } from "@/lib/format";
 import { thumbnail } from "@/lib/photos";
 import type { TrackedListing, TrackingStatus } from "@/lib/types";
 import { FavoriteButton } from "../FavoriteButton";
@@ -49,7 +49,7 @@ export function TrackedCard({
           {listing ? (
             <Link href={`/annonces/${listing.id}`} className={styles.title}>
               {formatRent(listing)}
-              {formatSize(listing) ? ` · ${formatSize(listing)}` : ""}
+              {[isForSale(listing) ? saleFacts(listing)[0] : formatSize(listing)].filter(Boolean).map((s) => ` · ${s}`)}
             </Link>
           ) : (
             <span className={styles.title}>Annonce introuvable</span>

@@ -21,7 +21,9 @@ import styles from "./SaveAlertModal.module.css";
 /** "4 ½ et + · 1 750 $ max · Rosemont" from the criteria, as a default name. */
 function defaultName(state: SearchState): string {
   const parts = [
-    state.tailleMin ? `${state.tailleMin} ½ et +` : null,
+    state.offre === "vente" ? "À vendre" : null,
+    state.offre === "vente" && state.chambres ? `${state.chambres} ch. et +` : null,
+    state.offre !== "vente" && state.tailleMin ? `${state.tailleMin} ½ et +` : null,
     state.prixMax ? `${formatPrice(state.prixMax)} max` : null,
     state.quartiers?.length ? state.quartiers.slice(0, 2).join(", ") + (state.quartiers.length > 2 ? "…" : "") : null,
     state.metro ? `métro ≤ ${state.metro} min` : null,

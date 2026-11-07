@@ -8,7 +8,7 @@ import { Gallery, Location } from "@vibe/icons";
 
 import { loadGroup, loadListingSummary, loadPage } from "@/app/actions";
 import { single } from "@/lib/groups";
-import { toQueryString, type SearchState } from "@/lib/search-params";
+import { isSale, toQueryString, type SearchState } from "@/lib/search-params";
 import type { Suggestion } from "@/lib/suggest";
 import type { BoundingBox, FilterOptions, ListingGroup, ListingGroupPage, ListingSummary, MapPoint } from "@/lib/types";
 import { BuildingCard } from "../BuildingCard";
@@ -270,7 +270,9 @@ export function SearchView({
         <section className={styles.listPane} ref={listRef} aria-labelledby="results-heading" aria-busy={pending}>
           <header className={styles.resultsHeader}>
             <h1 id="results-heading" className={styles.count}>
-              {total.toLocaleString("fr-CA")} annonce{total > 1 ? "s" : ""}
+              {total.toLocaleString("fr-CA")} {isSale(state) ? "propriété" : "annonce"}
+              {total > 1 ? "s" : ""}
+              {isSale(state) ? " à vendre" : ""}
             </h1>
             <span className={styles.scope}>
               {pending ? (

@@ -30,6 +30,14 @@ public record ListingInput(
 		Double roomsQc,
 		Integer yearBuilt,
 		Integer parkingSpots,
+		Double lotAreaSqft,
+		Double municipalAssessment,
+		Integer municipalAssessmentYear,
+		Double municipalTaxesYearly,
+		Double schoolTaxesYearly,
+		Double condoFeesMonthly,
+		Integer units,
+		Double grossRevenueYearly,
 		Boolean furnished,
 		Boolean petsAllowed,
 		Boolean smokingAllowed,
@@ -51,7 +59,9 @@ public record ListingInput(
 		utilitiesIncluded = (utilitiesIncluded == null) ? List.of() : utilitiesIncluded;
 		photos = (photos == null) ? List.of() : photos;
 		listingType = (listingType == null) ? ListingType.RENT : listingType;
-		pricePeriod = (pricePeriod == null) ? PricePeriod.MONTHLY : pricePeriod;
+		if (pricePeriod == null) {
+			pricePeriod = (listingType == ListingType.SALE) ? PricePeriod.TOTAL : PricePeriod.MONTHLY;
+		}
 	}
 
 	String key() {

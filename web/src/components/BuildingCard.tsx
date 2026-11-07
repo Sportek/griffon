@@ -5,7 +5,7 @@ import { Button } from "@vibe/core";
 import { NavigationChevronDown, NavigationChevronUp } from "@vibe/icons";
 
 import type { ListingGroup, ListingSummary } from "@/lib/types";
-import { formatPrice, formatSize, isNew, priceDrop, sourceName } from "@/lib/format";
+import { formatBedrooms, formatPrice, formatSize, isForSale, isNew, periodSuffix, priceDrop, sourceName } from "@/lib/format";
 import { thumbnail } from "@/lib/photos";
 import { UnitList } from "./UnitList";
 import styles from "./BuildingCard.module.css";
@@ -13,11 +13,11 @@ import styles from "./BuildingCard.module.css";
 /** Rows shown before "Voir les N autres": enough to compare, short enough to scan past. */
 const PREVIEW_ROWS = 4;
 
-/** "3 ½ ×2 · 4 ½ ×5": what the building offers, by size. */
+/** "3 ½ ×2 · 4 ½ ×5" (or "2 ch. ×3" for sale): what the building offers, by size. */
 function sizeMix(listings: ListingSummary[]): string {
   const counts = new Map<string, number>();
   for (const l of listings) {
-    const label = formatSize(l)?.replace("≈ ", "") ?? "?";
+    const label = (isForSale(l) ? formatBedrooms(l.bedrooms) : formatSize(l)?.replace("≈ ", "")) ?? "?";
     counts.set(label, (counts.get(label) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -28,8 +28,10 @@ function sizeMix(listings: ListingSummary[]): string {
 
 function priceRange(group: ListingGroup): string {
   if (group.minPrice == null) return "Prix non précisés";
-  if (group.maxPrice == null || group.maxPrice === group.minPrice) return `${formatPrice(group.minPrice)}/mois`;
-  return `${formatPrice(group.minPrice)} – ${formatPrice(group.maxPrice)}/mois`;
+  // A search is of one kind (rent or sale), so a group's members share their price period.
+  const suffix = periodSuffix(group.listings[0]?.pricePeriod);
+  if (group.maxPrice == null || group.maxPrice === group.minPrice) return `${formatPrice(group.minPrice)}${suffix}`;
+  return `${formatPrice(group.minPrice)} – ${formatPrice(group.maxPrice)}${suffix}`;
 }
 
 export function BuildingCard({
@@ -91,7 +93,7 @@ export function BuildingCard({
           <p className={styles.meta}>
             {filtered
               ? `${group.count} sur ${group.totalInBuilding} logements de l'immeuble correspondent`
-              : `${group.totalInBuilding} logements à louer dans l'immeuble`}
+              : `${group.totalInBuilding} logements ${isForSale(first) ? "à vendre" : "à louer"} dans l'immeuble`}
             {" · "}
             {sources}
           </p>

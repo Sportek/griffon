@@ -56,21 +56,33 @@ public class InactivityService {
 		}
 	}
 
-	/** Deactivates listings not seen for longer than their source threshold. */
+	/**
+	 * Deactivates listings not seen for longer than their threshold. Rentals and properties
+	 * for sale of one source are scraped by different runs, at different paces: each has its
+	 * own threshold, looked up by run source ({@code centris_sale}), then by listing source.
+	 */
 	public int sweep() {
 		Instant now = clock.instant();
 		int total = 0;
 		for (String source : mongo.getCollection(Listing.COLLECTION).distinct("source", String.class)) {
-			Duration staleAfter = properties.staleAfterBySource().getOrDefault(source, properties.staleAfter());
-			total += deactivate(new Document("source", source).append("lastSeenAt",
-					new Document("$lt", now.minus(staleAfter))));
+			for (boolean sale : new boolean[] { false, true }) {
+				RunScope scope = new RunScope(source, sale);
+				Duration staleAfter = properties.staleAfterBySource()
+					.getOrDefault(scope.runSource(),
+							properties.staleAfterBySource().getOrDefault(source, properties.staleAfter()));
+				total += deactivate(scope.criteria().append("lastSeenAt", new Document("$lt", now.minus(staleAfter))));
+			}
 		}
 		return total;
 	}
 
-	/** Deactivates listings of a source not seen since {@code since} (end of a complete run). */
-	public int markUnseenSince(String source, Instant since) {
-		return deactivate(new Document("source", source).append("lastSeenAt", new Document("$lt", since)));
+	/**
+	 * Deactivates the listings of a run source not seen since {@code since} (end of a complete
+	 * run). {@code centris} only touches Centris rentals, {@code centris_sale} only Centris
+	 * properties for sale.
+	 */
+	public int markUnseenSince(String runSource, Instant since) {
+		return deactivate(RunScope.of(runSource).criteria().append("lastSeenAt", new Document("$lt", since)));
 	}
 
 	private int deactivate(Document criteria) {

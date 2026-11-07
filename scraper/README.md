@@ -15,6 +15,16 @@ le plus proche et les commerces essentiels accessibles à pied.
 | Rentals.ca | `rentals_ca` | Playwright (Cloudflare) | Une ligne par plan d'unité. |
 | Groupes Facebook | `facebook` | Playwright avec une session connectée, filtre par mots-clés puis LLM (OpenRouter) | **Désactivé dans `all`.** Logements entiers et sous-locations publiés dans `FACEBOOK_GROUPS`. Voir [Source Facebook](#source-facebook). |
 | Realtor.ca | `realtor_ca` | Playwright, lecture passive de la réponse de recherche de la carte | **Désactivé dans `all`** (lançable explicitement). **Limité** : le site ne répond qu'au premier chargement de carte par session, donc environ 11 annonces par exécution en headless. Au Québec, ces annonces sont des syndications Centris (`extra.mls_number` = `external_id` Centris) : utiliser `centris` pour la couverture complète. |
+| Centris (à vendre) | `centris_sale` | HTTP, pages serveur | Condos, maisons, plex (`--areas`, défaut montreal,laval,longueuil). Évaluation municipale, taxes, frais de copropriété, terrain, unités et revenus des plex. Une recherche plafonnée à 5000 est redécoupée par secteur ; si un secteur reste plafonné, l'exécution échoue à la fin (rien n'est désactivé). `external_id` = `sale-<n° Centris>`. **Hors `all`.** |
+| DuProprio (à vendre) | `duproprio_sale` | HTTP, JSON-LD + HTML | Tout le Québec, du plus récent au plus ancien (~9000 annonces). Coordonnées publiées, évaluation, taxes, frais de copropriété, terrain. **Hors `all`.** |
+
+Les sources `*_sale` envoient `listing_type = "sale"` et `price_period = "total"` sous la source
+`centris` / `duproprio` : ce sont des sources d'exécution distinctes (planning, journal, désactivation
+des annonces non revues) mais pas des sources d'annonces distinctes. Elles parcourent des milliers de
+fiches (plusieurs heures) : leur plafond de requêtes est `SCRAPER_SALE_MAX_REQUESTS` (20000).
+ubee.ca (ubee.com) n'est pas une source : ses conditions d'utilisation interdisent l'extraction
+automatisée et la constitution de bases de données à partir de son contenu. Kijiji n'a pas de
+catégorie « à vendre » structurée (annonces génériques sans attributs immobiliers).
 
 ## Utilisation
 

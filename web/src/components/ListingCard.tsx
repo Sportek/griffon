@@ -8,9 +8,12 @@ import {
   formatArea,
   formatAvailability,
   formatBedrooms,
+  formatPrice,
   formatRent,
   formatSize,
+  isForSale,
   propertyTypeName,
+  saleFacts,
   sourceName,
 } from "@/lib/format";
 import { thumbnail } from "@/lib/photos";
@@ -31,6 +34,15 @@ function nearestTransit(listing: ListingSummary): string | null {
   return `Métro à ${Math.round(metro as number)} min`;
 }
 
+/** For sale: what a buyer pays besides the price, and the age of the building. */
+function saleDetails(listing: ListingSummary): string[] {
+  return [
+    listing.condoFeesMonthly != null ? `Copropriété ${formatPrice(listing.condoFeesMonthly)}/mois` : null,
+    listing.yearBuilt != null ? `Construit en ${listing.yearBuilt}` : null,
+    listing.lotAreaSqft != null ? `Terrain ${formatArea(listing.lotAreaSqft)}` : null,
+  ].filter((d): d is string => !!d);
+}
+
 export function ListingCard({
   listing,
   highlighted,
@@ -47,7 +59,10 @@ export function ListingCard({
   onHover?: (id: string | null) => void;
   onFavoriteChange?: (id: string, favorite: boolean) => void;
 }) {
-  const facts = [formatSize(listing), formatBedrooms(listing.bedrooms), formatArea(listing.areaSqft)].filter(Boolean);
+  const sale = isForSale(listing);
+  const facts = sale
+    ? saleFacts(listing)
+    : [formatSize(listing), formatBedrooms(listing.bedrooms), formatArea(listing.areaSqft)].filter(Boolean);
   const place = [listing.neighborhood, listing.city].filter(Boolean).join(", ") || listing.address || "Lieu non précisé";
   const transit = nearestTransit(listing);
   const photoCount = listing.photoCount ?? listing.photos.length;
@@ -94,8 +109,10 @@ export function ListingCard({
         </Link>
         <p className={styles.place}>{place}</p>
         <p className={styles.details}>
-          {[transit, isHeated(listing) ? "Chauffé" : null, availability].filter(Boolean).join(" · ") ||
-            "Proximité et disponibilité non précisées"}
+          {sale
+            ? [transit, ...saleDetails(listing)].filter(Boolean).join(" · ") || "Frais et année de construction non précisés"
+            : [transit, isHeated(listing) ? "Chauffé" : null, availability].filter(Boolean).join(" · ") ||
+              "Proximité et disponibilité non précisées"}
         </p>
         <div className={styles.meta}>
           <span>

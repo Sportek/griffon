@@ -20,18 +20,38 @@ export function formatPrice(price: number | null | undefined): string {
   return price == null ? "Prix non précisé" : money.format(price);
 }
 
-/** "1 450 $/mois", the period omitted when unknown. */
+/** "1 450 $/mois" for a rent, "549 000 $" for an asking price; the period omitted when unknown. */
 export function formatRent(listing: Pick<ListingSummary, "price" | "pricePeriod">): string {
   if (listing.price == null) return "Prix non précisé";
-  const suffix = listing.pricePeriod === "MONTHLY" ? "/mois" : listing.pricePeriod === "YEARLY" ? "/an" : "";
-  return money.format(listing.price) + suffix;
+  return money.format(listing.price) + periodSuffix(listing.pricePeriod);
 }
 
-/** Short marker label: "1,4 k" past a thousand, so a map pin stays narrow. */
+export function periodSuffix(period: ListingSummary["pricePeriod"] | undefined): string {
+  return period === "MONTHLY" ? "/mois" : period === "YEARLY" ? "/an" : "";
+}
+
+export function isForSale(listing: Pick<ListingSummary, "listingType">): boolean {
+  return listing.listingType === "SALE";
+}
+
+/** Short marker label: "1,4 k$" past a thousand, "1,25 M$" past a million, so a map pin stays narrow. */
 export function shortPrice(price: number | null): string {
   if (price == null) return "?";
   if (price < 1000) return `${Math.round(price)} $`;
-  return `${(price / 1000).toLocaleString("fr-CA", { maximumFractionDigits: 1 })} k$`;
+  if (price >= 1_000_000) return `${(price / 1_000_000).toLocaleString("fr-CA", { maximumFractionDigits: 2 })} M$`;
+  const digits = price >= 100_000 ? 0 : 1;
+  return `${(price / 1000).toLocaleString("fr-CA", { maximumFractionDigits: digits })} k$`;
+}
+
+/** "Triplex · 3 logements", "Condo · 2 ch.": what a property for sale is, in a few words. */
+export function saleFacts(
+  listing: Pick<ListingSummary, "propertyType" | "bedrooms" | "units" | "areaSqft">,
+): string[] {
+  return [
+    propertyTypeName(listing.propertyType),
+    listing.units != null && listing.units > 1 ? `${listing.units} logements` : formatBedrooms(listing.bedrooms),
+    formatArea(listing.areaSqft),
+  ].filter((f): f is string => !!f);
 }
 
 function half(rooms: number): string {
@@ -146,6 +166,7 @@ export const PROPERTY_TYPES: Record<string, string> = {
   "duplex-triplex": "Plex",
   townhouse: "Maison de ville",
   loft: "Loft",
+  chalet: "Chalet",
 };
 
 export function propertyTypeName(type: string | null): string | null {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { countListings } from "./api";
 import { formatPrice } from "./format";
-import { toFilter, toQueryString, type SearchState } from "./search-params";
+import { isSale, toFilter, toQueryString, type SearchState } from "./search-params";
 
 export interface Suggestion {
   /** "0 résultat à moins de 1 500 $ · 14 à moins de 1 750 $" */
@@ -25,6 +25,10 @@ const ADVANCED: (keyof SearchState)[] = [
   "chambres",
   "sdb",
   "superficie",
+  "annee",
+  "terrain",
+  "frais",
+  "logements",
   "types",
   "villes",
   "services",
@@ -38,11 +42,12 @@ const ADVANCED: (keyof SearchState)[] = [
 ];
 
 const roundUp50 = (n: number) => Math.ceil(n / 50) * 50;
+const roundUp25k = (n: number) => Math.ceil(n / 25_000) * 25_000;
 
 const RELAXATIONS: Relaxation[] = [
   {
     applies: (s) => s.prixMax != null,
-    relax: (s) => ({ ...s, prixMax: roundUp50((s.prixMax as number) * 1.15) }),
+    relax: (s) => ({ ...s, prixMax: (isSale(s) ? roundUp25k : roundUp50)((s.prixMax as number) * 1.15) }),
     describe: (s, r, count) => ({
       message: `0 résultat à moins de ${formatPrice(s.prixMax)}, ${count} à moins de ${formatPrice(r.prixMax)}`,
       action: `Monter le budget à ${formatPrice(r.prixMax)}`,
@@ -57,7 +62,7 @@ const RELAXATIONS: Relaxation[] = [
     }),
   },
   {
-    applies: (s) => s.tailleMin != null && s.tailleMin > 1,
+    applies: (s) => !isSale(s) && s.tailleMin != null && s.tailleMin > 1,
     relax: (s) => ({ ...s, tailleMin: (s.tailleMin as number) - 1 }),
     describe: (s, r, count) => ({
       message: `0 résultat en ${s.tailleMin} ½ et plus, ${count} en ${r.tailleMin} ½ et plus`,

@@ -50,9 +50,10 @@ async function gql<T>(query: string, variables: Record<string, unknown> = {}): P
 const TRACKING = `tracking { listingId favorite status notes visitAt hidden priceWhenTracked createdAt updatedAt }`;
 
 const SUMMARY = `
-  id source url title propertyType price pricePeriod address unit neighborhood city
+  id source url title listingType propertyType price pricePeriod address unit neighborhood city
   latitude longitude locationPrecision bedrooms bathrooms areaSqft roomsQc
-  furnished petsAllowed parkingSpots availableDate utilitiesIncluded photos
+  furnished petsAllowed parkingSpots yearBuilt condoFeesMonthly units lotAreaSqft
+  availableDate utilitiesIncluded photos
   metroWalkMinutes remWalkMinutes firstSeenAt lastSeenAt active inactiveSince
   priceHistory { price observedAt }
   duplicates { id source price }
@@ -125,7 +126,8 @@ export async function getListing(id: string) {
     `query($id: ID!) {
       listing(id: $id) {
         ${SUMMARY.replace("duplicates { id source price }", "")}
-        externalId listingType region postalCode yearBuilt smokingAllowed leaseTerm amenities
+        externalId region postalCode smokingAllowed leaseTerm amenities
+        municipalAssessment municipalAssessmentYear municipalTaxesYearly schoolTaxesYearly grossRevenueYearly
         description agencyName publishedAt updatedAt proximity
         priceBenchmark { scope area median sampleSize deltaPercent }
         sameBuilding { ${SUMMARY} }
@@ -191,8 +193,9 @@ const SAVED_SEARCH = `
   id name webhookUrl webhookFormat notifyOnPriceDrop enabled createdAt lastAlertAt
   matches(size: 1) { totalElements }
   filter {
-    sources cities neighborhoods propertyTypes minPrice maxPrice minBedrooms minRoomsQc maxRoomsQc
-    minAreaSqft minBathrooms minParkingSpots furnished petsAllowed smokingAllowed amenities
+    listingType sources cities neighborhoods propertyTypes minPrice maxPrice minBedrooms minRoomsQc maxRoomsQc
+    minAreaSqft minBathrooms minParkingSpots minYearBuilt minLotAreaSqft maxCondoFeesMonthly minUnits
+    furnished petsAllowed smokingAllowed amenities
     utilitiesIncluded hasPhotos text active excludeDuplicates excludeHidden maxTransitWalkMinutes buildingKeys
     nearbyCategories within { south west north east }
   }

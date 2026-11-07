@@ -1,4 +1,4 @@
-"""DuProprio rental scraper.
+"""DuProprio scraper: rentals (`scrape`) and properties for sale (`scrape_sale`, at the end).
 
 No browser needed -- plain HTTP works throughout:
 
@@ -16,13 +16,16 @@ No browser needed -- plain HTTP works throughout:
 
 import html
 import json
+import os
 import re
 import time
 from collections.abc import Iterator
 
 import httpx
+from selectolax.parser import HTMLParser
 
 from ..models import Listing
+from ..normalize import parse_number
 from ..polite import PoliteClient
 
 BASE_URL = "https://duproprio.com"
@@ -81,15 +84,15 @@ def _discover_urls(client: httpx.Client, page_number: int) -> list[tuple[str, st
 PHOTO_HOST = "https://photos.duproprio.com/"
 
 
-def _gallery(page: str, external_id: str) -> list[str]:
+def _gallery(page: str, external_id: str, kind: str = "for_rent") -> list[str]:
     """Every photo of the listing, at 1600 px, in upload order.
 
     The JSON-LD names a single image; the page's own photo data has the whole gallery.
     Photos of the other listings the page recommends are left out: a listing's photos
-    sit under its own id in the path.
+    sit under its own id in the path. `kind` is "for_rent" or "for_sale".
     """
     page = page.replace("\\/", "/")
-    pattern = re.compile(r"photos/public/for_rent/\d+/" + re.escape(external_id) + r"/[^\"'\s]*?-1600-(\d+)\.jpg")
+    pattern = re.compile(rf"photos/public/{kind}/\d+/" + re.escape(external_id) + r"/[^\"'\s]*?-1600-(\d+)\.jpg")
     found = {m.group(1): m.group(0) for m in pattern.finditer(page)}
     return [PHOTO_HOST + found[k] for k in sorted(found, key=int)]
 
@@ -185,5 +188,232 @@ def scrape(*, max_pages: int = 350, stale_page_limit: int = 5, delay_s: float = 
                     if detail:
                         yield _to_listing(external_id, url, detail)
                 except Exception:
+                    continue
+                time.sleep(delay_s)
+
+
+# --- Properties for sale ------------------------------------------------------------------
+#
+# /en/search/list?is_for_sale=1 lists every property for sale in Quebec, 12 per page, newest
+# first. A sale page differs from a rental one: its JSON-LD is a `Product` (price) plus a
+# `SingleFamilyResidence` (address and coordinates, whatever the type -- condos included),
+# with whitespace-padded values and raw newlines (hence strict=False). Everything else is
+# HTML: main characteristics (bedrooms, bathrooms, living area, lot), the "Property
+# features" rows (year built, municipal assessment, parking) and the yearly / monthly costs
+# table (taxes, condo fees). Sale and rental ids share one sequence, so they never collide.
+
+SALE_SEARCH_URL = f"{BASE_URL}/en/search/list"
+SALE_URL_RE = re.compile(r'href="(https://duproprio\.com/en/[^"]*?/([a-z0-9-]+)-for-sale/hab-[a-z0-9\-]+-(\d{6,}))"')
+# The URL's type slug, where it says more than the generic vocabulary would guess. In
+# Quebec English a "cottage" is a two-storey house, not a chalet.
+_SALE_TYPES = {"home": "house", "cottage": "house", "intergenerational": "house", "split-level": "house",
+               "semi-detached": "house", "detached": "house", "mobile-home": "house"}
+_NOT_HOMES = {"land", "lot", "farm", "hobby-farm", "commercial", "industrial", "business", "woodlot"}
+_SQFT_PER_M2 = 10.7639
+
+
+def _strip(value):
+    return value.strip() if isinstance(value, str) else value
+
+
+def _ld_blocks(page: str) -> dict[str, dict]:
+    blocks: dict[str, dict] = {}
+    for raw in LD_JSON_RE.findall(page):
+        try:
+            data = json.loads(raw, strict=False)
+        except ValueError:
+            continue  # e.g. a breadcrumb with an unrendered "{{$key+1}}" template
+        if isinstance(data, dict) and data.get("@type"):
+            blocks.setdefault(data["@type"], data)
+    return blocks
+
+
+def _clean(node) -> str | None:
+    if node is None:
+        return None
+    return re.sub(r"\s+", " ", node.text(separator=" ")).strip() or None
+
+
+def _surface_sqft(text: str | None) -> float | None:
+    """'1 056 ft² (98.11 m²)' -> 1056.0; '650 m²' -> 6996.5."""
+    if not text:
+        return None
+    if m := re.search(r"([\d\s  ,.]+)\s*ft", text):
+        return parse_number(m.group(1))
+    if m := re.search(r"([\d\s  ,.]+)\s*m", text):
+        n = parse_number(m.group(1))
+        return round(n * _SQFT_PER_M2, 1) if n is not None else None
+    return None
+
+
+def _money(text: str | None) -> float | None:
+    """'$2,200.00' -> 2200.0, '$470,000' -> 470000.0 (English formatting)."""
+    if not text or not (m := re.search(r"\d[\d,]*(?:\.\d+)?", text)):
+        return None
+    return float(m.group(0).replace(",", ""))
+
+
+def _parse_sale_page(page: str, url: str, external_id: str, type_slug: str | None) -> Listing | None:
+    ld = _ld_blocks(page)
+    home, product = ld.get("SingleFamilyResidence"), ld.get("Product")
+    if not home and not product:
+        return None
+    home, product = home or {}, product or {}
+    addr = {k: _strip(v) for k, v in (home.get("address") or {}).items()}
+    geo = home.get("geo") or {}
+    tree = HTMLParser(page)
+
+    # Main characteristics: "2 | bedrooms", "1 | bathroom", "Lot dimensions | 7 000 ft² (650.32 m²)".
+    bedrooms = bathrooms = area = lot = None
+    levels = None
+    for item in tree.css(".listing-main-characteristics__item"):
+        title = (_clean(item.css_first(".listing-main-characteristics__title")) or "").lower()
+        number = _clean(item.css_first(".listing-main-characteristics__number"))
+        classes = item.attributes.get("class") or ""
+        if "living-space-area" in classes:
+            area = _surface_sqft(number)
+        elif "lot-dimensions" in classes:
+            lot = _surface_sqft(number)
+        elif number and number.replace(".", "").isdigit():
+            n = float(number)
+            if "half" in title or "powder" in title:
+                bathrooms = (bathrooms or 0) + 0.5 * n
+            elif "bathroom" in title:
+                bathrooms = (bathrooms or 0) + n
+            elif "bedroom" in title:
+                bedrooms = n
+            elif "level" in title:
+                levels = n
+
+    rows: dict[str, str] = {}
+    for row in tree.css(".listing-box__dotted-row"):
+        cells = [c for c in (_clean(div) for div in row.iter() if div.tag == "div") if c]
+        if len(cells) >= 2:
+            rows.setdefault(cells[0], cells[-1])
+    parking = None
+    for key in ("Number of interior parking", "Number of exterior parking"):
+        if (n := _money(rows.get(key))) is not None:
+            parking = int((parking or 0) + n)
+
+    # "Summary of Expenditures | Monthly | Annual" rows.
+    taxes, school, condo_fees, expenses = None, None, None, {}
+    for row in tree.css(".mortgage-data__table--costs .mortgage-data__table__row"):
+        name = _clean(row.css_first(".mortgage-data__table__row__item--name"))
+        monthly = _money(_clean(row.css_first(".mortgage-data__table__row__item--monthly-costs")))
+        yearly = _money(_clean(row.css_first(".mortgage-data__table__row__item--yearly-costs")))
+        if not name:
+            continue
+        low = name.lower()
+        if low.startswith(("property tax", "municipal tax")):
+            taxes = yearly
+        elif low.startswith("school tax"):
+            school = yearly
+        elif "condo fee" in low or "co-ownership" in low:
+            condo_fees = monthly if monthly is not None else (round(yearly / 12, 2) if yearly else None)
+        elif yearly is not None:
+            expenses[name] = yearly
+
+    description_node = tree.css_first(".js-listing-owners-comments-description-original") or tree.css_first(
+        ".listing-owners-comments__description"
+    )
+    description = description_node.text(separator="\n").strip() if description_node is not None else None
+    description = re.sub(r"\n\s*\n+", "\n\n", description) if description else None
+
+    year = _money(rows.get("Year of construction"))
+    units = _money(rows.get("Number of units") or rows.get("Number of dwellings"))
+    lat, lng = _strip(geo.get("latitude")), _strip(geo.get("longitude"))
+    try:
+        lat, lng = (float(lat), float(lng)) if lat and lng else (None, None)
+    except ValueError:
+        lat, lng = None, None
+    price = _money(_strip((product.get("offers") or {}).get("price")))
+    raw_type = _SALE_TYPES.get(type_slug or "", type_slug)
+
+    extra = {
+        "ownership": rows.get("Ownership"),
+        "property_style": rows.get("Property Style"),
+        "floor": rows.get("Located on which floor?"),
+        "levels": levels,
+        "building_dimensions": rows.get("Building dimensions"),
+        "expenses_yearly": expenses or None,
+        "type_slug": type_slug,
+    }
+    image = _strip(home.get("image") or product.get("image"))
+    return Listing(
+        source="duproprio",
+        external_id=external_id,
+        url=url,
+        title=html.unescape(_strip(home.get("name") or product.get("name")) or "") or None,
+        listing_type="sale",
+        property_type=raw_type,
+        price=price or None,
+        price_period="total",
+        address=(html.unescape(addr.get("streetAddress") or "")).lstrip(". ") or None,
+        city=html.unescape(addr["addressLocality"]) if addr.get("addressLocality") else None,
+        region=addr.get("addressRegion"),
+        postal_code=addr.get("postalCode"),
+        latitude=lat,
+        longitude=lng,
+        location_precision="exact" if lat is not None else None,
+        bedrooms=bedrooms,
+        bathrooms=bathrooms,
+        area_sqft=area,
+        lot_area_sqft=lot,
+        year_built=int(year) if year else None,
+        parking_spots=parking,
+        municipal_assessment=_money(rows.get("Municipal Assessment")),
+        municipal_taxes_yearly=taxes,
+        school_taxes_yearly=school,
+        condo_fees_monthly=condo_fees,
+        units=int(units) if units else None,
+        photos=_primary_first(_gallery(page, external_id, "for_sale"), image),
+        description=description,
+        extra={k: v for k, v in extra.items() if v is not None},
+    )
+
+
+def _discover_sale_urls(client: httpx.Client, page_number: int) -> list[tuple[str, str, str]]:
+    """[(external_id, url, type slug), ...] for one page of properties for sale."""
+    resp = client.get(
+        SALE_SEARCH_URL,
+        params={"search": "true", "is_for_sale": 1, "parent": 1, "pageNumber": page_number, "sort": "-published_at"},
+    )
+    resp.raise_for_status()
+    found: dict[str, tuple[str, str]] = {}
+    for url, type_slug, ext_id in SALE_URL_RE.findall(resp.text):
+        found.setdefault(ext_id, (url, type_slug))
+    return [(eid, url, slug) for eid, (url, slug) in found.items()]
+
+
+def scrape_sale(
+    *, max_pages: int = 1000, stale_page_limit: int = 5, delay_s: float = 0.5, max_requests: int | None = None
+) -> Iterator[Listing]:
+    """Yields DuProprio properties for sale (houses, condos, plexes), newest first."""
+    if max_requests is None:
+        max_requests = int(os.getenv("SCRAPER_SALE_MAX_REQUESTS", 20000))
+    seen_ids: set[str] = set()
+    stale_pages = 0
+    with PoliteClient(
+        headers=HEADERS, timeout=20, follow_redirects=True, source="duproprio_sale", max_requests=max_requests
+    ) as client:
+        for page_number in range(1, max_pages + 1):
+            rows = _discover_sale_urls(client, page_number)
+            if not rows:
+                break
+            fresh = [r for r in rows if r[0] not in seen_ids]
+            stale_pages = stale_pages + 1 if not fresh else 0
+            if stale_pages >= stale_page_limit:
+                break
+            for external_id, url, type_slug in fresh:
+                seen_ids.add(external_id)
+                if type_slug in _NOT_HOMES:
+                    continue
+                try:
+                    resp = client.get(url)
+                    resp.raise_for_status()
+                    listing = _parse_sale_page(resp.text, url, external_id, type_slug)
+                    if listing:
+                        yield listing
+                except Exception:  # noqa: BLE001 -- one odd page must not stop the crawl
                     continue
                 time.sleep(delay_s)

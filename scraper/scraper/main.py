@@ -51,11 +51,22 @@ SOURCES = {
         headless=not args.headed,
         max_scrolls=args.max_pages,
     ),
+    # Properties for sale. A source of its own, not an option of "centris" / "duproprio": each
+    # gets its own schedule and ingestion runs, and a run only ever deactivates the listings
+    # of its own kind (see RunScope in listings-api). The listings keep source "centris" /
+    # "duproprio" with listing_type "sale".
+    "centris_sale": lambda args: centris.scrape_sale(
+        areas=_csv(args.areas),
+        max_pages_per_area=args.max_pages or 250,
+    ),
+    "duproprio_sale": lambda args: duproprio.scrape_sale(max_pages=args.max_pages or 1000),
 }
 
+# realtor_ca: see above. The sale sources walk thousands of pages (hours each): run them
+# explicitly or from a schedule, so "all" stays the rental scrape it always was.
 # logis_quebec: the whole site has been behind an interactive Cloudflare challenge since
 # 31 Oct 2026 (see sources/logis_quebec.py); it stops at the first request until that changes.
-DISABLED_FROM_ALL = {"realtor_ca", "logis_quebec", "facebook"}
+DISABLED_FROM_ALL = {"realtor_ca", "logis_quebec", "facebook", "centris_sale", "duproprio_sale"}
 # Sources whose crawl can't tell a removed listing from one it didn't scroll to: they
 # expire through the API's inactivity sweep instead (listings.inactivity.stale-after-by-source).
 NEVER_MARK_UNSEEN = {"facebook"}
@@ -64,7 +75,7 @@ NEVER_MARK_UNSEEN = {"facebook"}
 def main() -> None:
     load_dotenv()
 
-    parser = argparse.ArgumentParser(description="Quebec rental listings scraper")
+    parser = argparse.ArgumentParser(description="Quebec listings scraper (rentals; *_sale sources: properties for sale)")
     parser.add_argument("source", choices=[*SOURCES.keys(), "all"])
     parser.add_argument(
         "--out",
@@ -76,7 +87,7 @@ def main() -> None:
         "--areas",
         default=None,
         help="comma-separated areas; meaning depends on the source "
-        "(centris: montreal,laval; logis_quebec: ile-de-montreal; kijiji: montreal or slug:locationId; "
+        "(centris, centris_sale: montreal,laval; logis_quebec: ile-de-montreal; kijiji: montreal or slug:locationId; "
         "rentals_ca: montreal,laval; realtor_ca: montreal,laval; facebook: group URLs or ids)",
     )
     parser.add_argument("--headed", action="store_true", help="show the browser (rentals_ca, realtor_ca, facebook)")

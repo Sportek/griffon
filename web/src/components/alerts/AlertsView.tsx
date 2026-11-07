@@ -17,6 +17,8 @@ import styles from "./AlertsView.module.css";
 /** The saved criteria as one readable line. */
 function describe(filter: ListingFilter): string {
   const parts = [
+    filter.listingType === "SALE" ? "À vendre" : null,
+    filter.listingType === "SALE" && filter.minBedrooms ? `${filter.minBedrooms} ch. et +` : null,
     filter.minRoomsQc ? `${filter.minRoomsQc} ½ et +` : null,
     filter.maxPrice ? `${formatPrice(filter.maxPrice)} max` : null,
     filter.neighborhoods?.length ? filter.neighborhoods.join(", ") : null,
@@ -26,6 +28,8 @@ function describe(filter: ListingFilter): string {
     filter.utilitiesIncluded?.includes("chauffage") ? "chauffé" : null,
     filter.text ? `« ${filter.text} »` : null,
     filter.within ? "zone de carte" : null,
+    filter.maxCondoFeesMonthly ? `copropriété ≤ ${formatPrice(filter.maxCondoFeesMonthly)}/mois` : null,
+    filter.minUnits ? `${filter.minUnits} logements et +` : null,
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Toutes les annonces en ligne";
 }

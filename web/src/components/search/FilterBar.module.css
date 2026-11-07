@@ -11,7 +11,8 @@
   border-bottom: 1px solid var(--layout-border-color);
 }
 
-.field {
+.field,
+.offer {
   flex-shrink: 0;
 }
 
@@ -72,6 +73,7 @@
   }
 
   .field,
+  .offer,
   .button {
     scroll-snap-align: start;
   }

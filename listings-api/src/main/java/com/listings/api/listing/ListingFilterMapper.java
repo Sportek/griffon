@@ -56,8 +56,15 @@ public final class ListingFilterMapper {
 		range(query, "areaSqft", filter.minAreaSqft(), filter.maxAreaSqft());
 		range(query, "firstSeenAt", filter.firstSeenAfter(), filter.firstSeenBefore());
 		range(query, "lastSeenAt", filter.lastSeenAfter(), null);
-		range(query, "yearBuilt", filter.minYearBuilt(), null);
+		range(query, "yearBuilt", filter.minYearBuilt(), filter.maxYearBuilt());
 		range(query, "parkingSpots", filter.minParkingSpots(), null);
+		range(query, "lotAreaSqft", filter.minLotAreaSqft(), null);
+		range(query, "units", filter.minUnits(), null);
+		if (filter.maxCondoFeesMonthly() != null) {
+			// A house or a plex has no condo fees: no fees counts as under any maximum.
+			query.append("$or", List.of(new Document("condoFeesMonthly", new Document("$lte", filter.maxCondoFeesMonthly())),
+					new Document("condoFeesMonthly", null)));
+		}
 		range(query, "metroWalkMinutes", null, filter.maxMetroWalkMinutes());
 		range(query, "remWalkMinutes", null, filter.maxRemWalkMinutes());
 		range(query, ProximityFacts.TRANSIT, null, filter.maxTransitWalkMinutes());

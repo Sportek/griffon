@@ -12,7 +12,9 @@ import {
   formatPrice,
   formatRent,
   formatSize,
+  isForSale,
   propertyTypeName,
+  saleFacts,
   sourceName,
 } from "@/lib/format";
 import type { ListingDetail, PriceBenchmark } from "@/lib/types";
@@ -38,7 +40,7 @@ async function load(id: string): Promise<ListingDetail | null> {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const listing = await load((await params).id).catch(() => null);
   if (!listing) return { title: "Annonce" };
-  const size = formatSize(listing);
+  const size = isForSale(listing) ? saleFacts(listing)[0] : formatSize(listing);
   return { title: [size, formatRent(listing), listing.neighborhood ?? listing.city].filter(Boolean).join(" · ") };
 }
 
@@ -70,11 +72,51 @@ export default async function ListingPage({ params }: Params) {
   }
   if (!listing) notFound();
 
-  const size = formatSize(listing);
+  const sale = isForSale(listing);
+  const size = sale ? null : formatSize(listing);
   const place = [listing.neighborhood, listing.city].filter(Boolean).join(", ");
   const proximity = listing.proximity;
+  const parking =
+    listing.parkingSpots != null
+      ? listing.parkingSpots > 0
+        ? `${listing.parkingSpots} place${listing.parkingSpots > 1 ? "s" : ""}`
+        : "Aucun"
+      : null;
+  const money = (n: number | null, suffix = "") => (n != null ? `${formatPrice(n)}${suffix}` : null);
+  // The benchmark compares a property for sale with the same type and bedrooms.
+  const benchmarkSize = sale
+    ? `propriétés comparables (${[propertyTypeName(listing.propertyType)?.toLowerCase(), formatBedrooms(listing.bedrooms)]
+        .filter(Boolean)
+        .join(", ")})`
+    : size;
 
-  const facts: [string, string | null][] = [
+  const saleFactList: [string, string | null][] = [
+    ["Type", propertyTypeName(listing.propertyType)],
+    ["Chambres", formatBedrooms(listing.bedrooms)],
+    ["Salles de bain", listing.bathrooms != null ? String(listing.bathrooms) : null],
+    ["Superficie", formatArea(listing.areaSqft)],
+    ["Terrain", formatArea(listing.lotAreaSqft)],
+    ["Construction", listing.yearBuilt != null ? String(listing.yearBuilt) : null],
+    ["Stationnement", parking],
+    [
+      listing.municipalAssessmentYear ? `Évaluation municipale (${listing.municipalAssessmentYear})` : "Évaluation municipale",
+      money(listing.municipalAssessment),
+    ],
+    ["Taxes municipales", money(listing.municipalTaxesYearly, "/an")],
+    ["Taxes scolaires", money(listing.schoolTaxesYearly, "/an")],
+    ...(listing.condoFeesMonthly != null || listing.propertyType === "condo"
+      ? ([["Frais de copropriété", money(listing.condoFeesMonthly, "/mois")]] as [string, string | null][])
+      : []),
+    ...(listing.units != null && listing.units > 1
+      ? ([
+          ["Logements", String(listing.units)],
+          ["Revenus bruts", money(listing.grossRevenueYearly, "/an")],
+        ] as [string, string | null][])
+      : []),
+    ["Occupation", formatAvailability(listing.availableDate)],
+  ];
+
+  const rentFacts: [string, string | null][] = [
     ["Taille", size],
     ["Chambres", formatBedrooms(listing.bedrooms)],
     ["Salles de bain", listing.bathrooms != null ? String(listing.bathrooms) : null],
@@ -85,9 +127,10 @@ export default async function ListingPage({ params }: Params) {
     ["Animaux", yesNo(listing.petsAllowed, "Acceptés", "Refusés")],
     ["Meublé", yesNo(listing.furnished, "Oui", "Non")],
     ["Fumeur", yesNo(listing.smokingAllowed, "Permis", "Non-fumeur")],
-    ["Stationnement", listing.parkingSpots != null ? (listing.parkingSpots > 0 ? `${listing.parkingSpots} place${listing.parkingSpots > 1 ? "s" : ""}` : "Aucun") : null],
+    ["Stationnement", parking],
     ["Construction", listing.yearBuilt != null ? String(listing.yearBuilt) : null],
   ];
+  const facts = sale ? saleFactList : rentFacts;
 
   const sources = [
     { id: listing.id, source: listing.source, url: listing.url, price: listing.price, active: listing.active, current: true },
@@ -111,7 +154,10 @@ export default async function ListingPage({ params }: Params) {
             <Signals listing={{ ...listing, duplicates: [] }} />
           </div>
           <p className={styles.facts}>
-            {[size, formatBedrooms(listing.bedrooms), formatArea(listing.areaSqft), propertyTypeName(listing.propertyType)]
+            {(sale
+              ? saleFacts(listing)
+              : [size, formatBedrooms(listing.bedrooms), formatArea(listing.areaSqft), propertyTypeName(listing.propertyType)]
+            )
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -160,12 +206,14 @@ export default async function ListingPage({ params }: Params) {
 
           <section className={styles.section} aria-labelledby="included-heading">
             <h2 id="included-heading" className={styles.sectionTitle}>
-              Inclus et commodités
+              {sale ? "Caractéristiques" : "Inclus et commodités"}
             </h2>
-            <p className={styles.subtle}>
-              <strong>Inclus dans le loyer : </strong>
-              {listing.utilitiesIncluded.length ? listing.utilitiesIncluded.join(", ") : "non précisé"}
-            </p>
+            {!sale && (
+              <p className={styles.subtle}>
+                <strong>Inclus dans le loyer : </strong>
+                {listing.utilitiesIncluded.length ? listing.utilitiesIncluded.join(", ") : "non précisé"}
+              </p>
+            )}
             {listing.amenities.length > 0 ? (
               <ul className={styles.tags}>
                 {listing.amenities.map((a) => (
@@ -216,7 +264,7 @@ export default async function ListingPage({ params }: Params) {
                 Repère de prix
               </h2>
               <p className={styles.benchmark} data-direction={listing.priceBenchmark.deltaPercent < 0 ? "down" : "up"}>
-                {benchmarkText(listing.priceBenchmark, size)}
+                {benchmarkText(listing.priceBenchmark, benchmarkSize)}
               </p>
               <p className={styles.subtle}>
                 Médiane {formatPrice(listing.priceBenchmark.median)}, sur {listing.priceBenchmark.sampleSize} annonces
