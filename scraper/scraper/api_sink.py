@@ -25,6 +25,7 @@ from pathlib import Path
 import httpx
 
 from .models import Listing
+from .polite import IncompleteCrawl
 
 DEFAULT_URL = "http://localhost:8080/graphql"
 
@@ -216,11 +217,18 @@ class ApiSink:
     @contextmanager
     def attach(self, run_id: str, *, source: str, mark_unseen_inactive: bool = False) -> Iterator[str]:
         """Sends the writes inside the block to an existing RUNNING run (e.g. one a worker
-        claimed), then finishes it: SUCCEEDED, or FAILED with the exception if the block raises."""
+        claimed), then finishes it: SUCCEEDED, or FAILED with the exception if the block raises.
+
+        IncompleteCrawl (the source lost too many pages) finishes it SUCCEEDED -- what it sent
+        is good -- but never marks unseen listings inactive: they were probably just missed."""
         self._run_id = run_id
         status, error = "SUCCEEDED", None
         try:
             yield run_id
+        except IncompleteCrawl as e:
+            error = f"incomplete crawl, unseen listings left active: {e}"
+            mark_unseen_inactive = False
+            raise
         except BaseException as e:
             status, error = "FAILED", str(e) or repr(e)
             raise

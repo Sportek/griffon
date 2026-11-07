@@ -3,7 +3,8 @@
 The API owns the schedule (scrapeSchedules / triggerScrape) and queues runs; this worker
 polls `claimIngestionRun`, runs the source with the run's params, streams listings into
 the run, keeps it alive with heartbeats and finishes it (FAILED with the reason if the
-source is blocked or crashes). It only ever calls out to the API, so it can sit behind a
+source is blocked or crashes; SUCCEEDED without deactivating anything if the source lost
+too many pages, see polite.CrawlHealth). It only ever calls out to the API, so it can sit behind a
 home NAT (e.g. on a residential IP, which sites block far less than datacenter IPs).
 
     LISTINGS_API_URL=https://api.example/graphql LISTINGS_API_KEY=... python -m scraper.worker
@@ -30,7 +31,7 @@ from .api_sink import ApiError, ApiSink
 from .geo.config import ProximityConfig
 from .geo.enrich import Enricher
 from .main import SOURCES
-from .polite import SourceBlocked
+from .polite import IncompleteCrawl, SourceBlocked
 
 log = sys.stderr
 
@@ -82,6 +83,9 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
                     print(f"[worker] {source}: {seen} sent", file=log)
                 if limit and seen >= limit:
                     break
+    except IncompleteCrawl as e:
+        # The run is SUCCEEDED, but nothing was marked inactive (see ApiSink.attach).
+        print(f"[worker] {source} incomplete, no listing deactivated: {e}", file=log)
     except SourceBlocked as e:
         print(f"[worker] {source} stopped: {e}", file=log)
     except Stop:

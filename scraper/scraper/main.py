@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from .api_sink import ApiSink
 from .geo.config import DEFAULT_CATEGORIES, POI_CATEGORIES, PREFETCH_AREAS, ProximityConfig
 from .geo.enrich import Enricher
-from .polite import SourceBlocked
+from .polite import IncompleteCrawl, SourceBlocked
 from .sinks import JsonlSink, StdoutSink
 from .sources import centris, duproprio, kijiji, logis_quebec, realtor_ca, rentals_ca
 
@@ -46,7 +46,9 @@ SOURCES = {
     ),
 }
 
-DISABLED_FROM_ALL = {"realtor_ca"}
+# logis_quebec: the whole site has been behind an interactive Cloudflare challenge since
+# 31 Oct 2026 (see sources/logis_quebec.py); it stops at the first request until that changes.
+DISABLED_FROM_ALL = {"realtor_ca", "logis_quebec"}
 
 
 def main() -> None:
@@ -160,6 +162,9 @@ def main() -> None:
                         print(f"[{name}] {seen} seen, {written} new", file=log)
                     if args.limit and seen >= args.limit:
                         break
+        except IncompleteCrawl as e:
+            # Too many pages lost: what was found is kept, but nothing is marked inactive.
+            print(f"[{name}] incomplete, no listing deactivated: {e}", file=log)
         except SourceBlocked as e:
             # The site is refusing us: stop this source (its run is FAILED) and move on.
             print(f"[{name}] stopped: {e}", file=log)
