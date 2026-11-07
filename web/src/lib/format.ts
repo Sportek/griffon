@@ -8,6 +8,7 @@ export const SOURCE_NAMES: Record<string, string> = {
   rentals_ca: "rentals.ca",
   realtor_ca: "realtor.ca",
   facebook: "Facebook",
+  ubee: "ubee",
 };
 
 export function sourceName(source: string): string {

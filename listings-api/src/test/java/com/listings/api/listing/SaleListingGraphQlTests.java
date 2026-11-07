@@ -93,6 +93,29 @@ class SaleListingGraphQlTests extends IntegrationTest {
 	}
 
 	@Test
+	void ubeeSaleRunsAreScopedAndSweptLikeTheOtherSaleSources() {
+		upsert(listing("ubee", "u-rent", "Laval", 1500.0), forSale("ubee", "u-sale", "Laval", 450000.0));
+		clock.advance(Duration.ofHours(1));
+		String saleRun = startRun("ubee_sale");
+		sendInRun(saleRun, List.of(listing("ubee", "u-rent-in-sale-run", "Laval", 1.0)))
+			.path("upsertListings.rejected")
+			.entity(Integer.class)
+			.isEqualTo(1);
+		assertThat(finish(saleRun)).isEqualTo(1);
+		assertThat(active("ubee", "u-sale")).isFalse();
+		assertThat(active("ubee", "u-rent")).isTrue();
+
+		upsert(listing("ubee", "u-rent", "Laval", 1500.0), forSale("ubee", "u-sale", "Laval", 450000.0));
+		clock.advance(Duration.ofDays(4));
+		graphQl.document("mutation { sweepInactiveListings }").execute();
+		assertThat(active("ubee", "u-rent")).isFalse();
+		assertThat(active("ubee", "u-sale")).isTrue(); // INACTIVITY_STALE_AFTER_SALE, 10 days
+		clock.advance(Duration.ofDays(7));
+		graphQl.document("mutation { sweepInactiveListings }").execute();
+		assertThat(active("ubee", "u-sale")).isFalse();
+	}
+
+	@Test
 	void saleFieldsAreStoredAndFiltered() {
 		Map<String, Object> condo = with(forSale("centris", "sale-1", "Montréal", 420000.0), "propertyType", "condo",
 				"yearBuilt", 2009, "condoFeesMonthly", 399.0, "municipalAssessment", 390300.0,

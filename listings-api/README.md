@@ -67,6 +67,9 @@ mutation {
   # À vendre : des milliers de fiches par exécution (plusieurs heures), une fois par semaine.
   g: saveScrapeSchedule(input: { source: "duproprio_sale", cron: "0 0 12 * * SAT", params: { markUnseenInactive: true } }) { nextRunAt }
   h: saveScrapeSchedule(input: { source: "centris_sale",   cron: "0 0 12 * * SUN", params: { markUnseenInactive: true } }) { nextRunAt }
+  # ubee.com : annonces publiées sur ubee seulement (syndications Centris écartées), quelques centaines de requêtes.
+  i: saveScrapeSchedule(input: { source: "ubee",           cron: "0 0 3 * * *",    params: { markUnseenInactive: true } }) { nextRunAt }
+  j: saveScrapeSchedule(input: { source: "ubee_sale",      cron: "0 0 12 * * WED", params: { markUnseenInactive: true } }) { nextRunAt }
 }
 mutation { triggerScrape(source: "kijiji", params: { limit: 50 }) { id status } }   # lancer maintenant
 { ingestionRuns(limit: 10) { source status trigger worker queuedAt startedAt finishedAt received created error } }

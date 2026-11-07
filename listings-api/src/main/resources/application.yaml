@@ -31,6 +31,7 @@ listings:
     stale-after-by-source:
       centris_sale: ${INACTIVITY_STALE_AFTER_SALE:10d}
       duproprio_sale: ${INACTIVITY_STALE_AFTER_SALE:10d}
+      ubee_sale: ${INACTIVITY_STALE_AFTER_SALE:10d}
       # Facebook group posts are sent once (the scraper stops at posts it has already seen),
       # so lastSeenAt is the first sighting: retire them after a month.
       facebook: ${INACTIVITY_STALE_AFTER_FACEBOOK:30d}
