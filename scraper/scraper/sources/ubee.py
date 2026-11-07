@@ -42,7 +42,7 @@ import httpx
 
 from ..models import Listing
 from ..normalize import format_postal_code, html_to_text, iso_date, parse_qc_rooms, split_city_neighborhood
-from ..polite import CrawlHealth, PoliteClient, SourceBlocked
+from ..polite import CrawlHealth, PoliteClient, SourceBlocked, report_progress
 
 SITE_URL = "https://ubee.com"
 API_URL = "https://api.ubee.ca"
@@ -491,7 +491,8 @@ def _crawl(
             health.gap("search failed: nothing listed")
             cards = {}
         try:
-            for listing_id, card in cards.items():
+            for position, (listing_id, card) in enumerate(cards.items(), 1):
+                report_progress(run_source, position, len(cards))
                 if not is_home(card):
                     skipped_not_home += 1
                     continue

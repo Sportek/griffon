@@ -14,6 +14,7 @@ Environment:
     WORKER_SOURCES         comma-separated sources this worker accepts (default: all)
     WORKER_POLL_SECONDS    wait between two claims when idle (default 60)
     WORKER_HEARTBEAT_SECONDS                              (default 60)
+    WORKER_PROGRESS_SECONDS  a [progress] line in the logs every so often (default 300)
 """
 
 import argparse
@@ -31,7 +32,7 @@ from .api_sink import ApiError, ApiSink
 from .geo.config import ProximityConfig
 from .geo.enrich import Enricher
 from .main import NEVER_MARK_UNSEEN, SOURCES
-from .polite import IncompleteCrawl, SourceBlocked
+from .polite import PROGRESS, IncompleteCrawl, SourceBlocked
 
 log = sys.stderr
 
@@ -44,14 +45,36 @@ def _on_signal(signum, _frame):
     raise Stop(f"worker stopped by signal {signal.Signals(signum).name}")
 
 
-def _heartbeat(run_id: str, stop: threading.Event, every_s: float) -> None:
+def _minutes(seconds: float) -> str:
+    m = round(seconds / 60)
+    return f"{m // 60} h {m % 60:02d}" if m >= 60 else f"{m} min"
+
+
+def progress_line(source: str, elapsed_s: float, sent: int, progress: dict[str, int]) -> str:
+    """One line on where a run is: time, listings sent, requests, and position/ETA when known."""
+    parts = [f"[progress] {source}: {_minutes(elapsed_s)}", f"{sent} listings sent"]
+    if "requests" in progress:
+        parts.append(f"{progress['requests']} requests")
+    done, total = progress.get("done"), progress.get("total")
+    if done and total:
+        parts.append(f"{done}/{total} checked ({100 * done // total} %)")
+        if done < total and elapsed_s > 60:
+            parts.append(f"~{_minutes(elapsed_s / done * (total - done))} left")
+    return ", ".join(parts)
+
+
+def _heartbeat(run_id: str, stop: threading.Event, every_s: float, report=None, report_every_s: float = 300) -> None:
     # Own client: the main thread's one is busy streaming listings.
+    next_report = time.monotonic() + report_every_s
     with ApiSink() as beat:
         while not stop.wait(every_s):
             try:
                 beat.heartbeat(run_id)
             except Exception as e:  # noqa: BLE001 -- a missed beat is retried next time
                 print(f"[worker] heartbeat failed: {e!r}", file=log)
+            if report and time.monotonic() >= next_report:
+                next_report += report_every_s
+                print(report(), file=log, flush=True)
 
 
 def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
@@ -66,10 +89,21 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
     limit = params.get("limit")
     enricher = Enricher(ProximityConfig()) if params.get("enrich") else None
 
-    stop = threading.Event()
-    beat = threading.Thread(target=_heartbeat, args=(run["id"], stop, heartbeat_s), daemon=True)
-    beat.start()
+    PROGRESS.pop(source, None)
+    started = time.monotonic()
     seen = 0
+
+    def report() -> str:
+        return progress_line(source, time.monotonic() - started, seen, dict(PROGRESS.get(source, {})))
+
+    stop = threading.Event()
+    beat = threading.Thread(
+        target=_heartbeat,
+        args=(run["id"], stop, heartbeat_s),
+        kwargs={"report": report, "report_every_s": float(os.getenv("WORKER_PROGRESS_SECONDS", 300))},
+        daemon=True,
+    )
+    beat.start()
     try:
         mark_unseen = bool(params.get("markUnseenInactive")) and source not in NEVER_MARK_UNSEEN
         with sink.attach(run["id"], source=source, mark_unseen_inactive=mark_unseen):
@@ -96,6 +130,7 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
     finally:
         stop.set()
     print(f"[worker] {source} done: {seen} listings", file=log)
+    print(report(), file=log)
 
 
 def main() -> None:
