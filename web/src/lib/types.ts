@@ -95,6 +95,8 @@ export interface ListingSummary {
   availableDate: string | null;
   utilitiesIncluded: string[];
   photos: string[];
+  /** All the photos, when `photos` was cut to the first one for a card. */
+  photoCount?: number;
   metroWalkMinutes: number | null;
   remWalkMinutes: number | null;
   firstSeenAt: string;
@@ -193,8 +195,6 @@ export interface MapPoint {
   latitude: number;
   longitude: number;
   price: number | null;
-  roomsQc: number | null;
-  bedrooms: number | null;
   locationPrecision: string | null;
   firstSeenAt: string;
 }

@@ -13,6 +13,7 @@ import {
   propertyTypeName,
   sourceName,
 } from "@/lib/format";
+import { thumbnail } from "@/lib/photos";
 import { FavoriteButton } from "./FavoriteButton";
 import { Signals } from "./Signals";
 import { StatusPill } from "./StatusPill";
@@ -33,12 +34,15 @@ function nearestTransit(listing: ListingSummary): string | null {
 export function ListingCard({
   listing,
   highlighted,
+  priority,
   seenBefore,
   onHover,
   onFavoriteChange,
 }: {
   listing: ListingSummary;
   highlighted?: boolean;
+  /** At the top of the first screen: the photo loads first instead of lazily. */
+  priority?: boolean;
   seenBefore?: string | null;
   onHover?: (id: string | null) => void;
   onFavoriteChange?: (id: string, favorite: boolean) => void;
@@ -46,6 +50,7 @@ export function ListingCard({
   const facts = [formatSize(listing), formatBedrooms(listing.bedrooms), formatArea(listing.areaSqft)].filter(Boolean);
   const place = [listing.neighborhood, listing.city].filter(Boolean).join(", ") || listing.address || "Lieu non précisé";
   const transit = nearestTransit(listing);
+  const photoCount = listing.photoCount ?? listing.photos.length;
   const availability = formatAvailability(listing.availableDate);
   const cheaperElsewhere = listing.duplicates
     .filter((d) => d.price != null && listing.price != null && d.price < listing.price)
@@ -62,11 +67,17 @@ export function ListingCard({
       <div className={styles.photo}>
         {listing.photos[0] ? (
           // eslint-disable-next-line @next/next/no-img-element -- photos come from the source sites' CDNs
-          <img src={listing.photos[0]} alt="" loading="lazy" referrerPolicy="no-referrer" />
+          <img
+            src={thumbnail(listing.photos[0])}
+            alt=""
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : undefined}
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <span className={styles.noPhoto}>Pas de photo</span>
         )}
-        {listing.photos.length > 1 && <span className={styles.photoCount}>{listing.photos.length} photos</span>}
+        {photoCount > 1 && <span className={styles.photoCount}>{photoCount} photos</span>}
       </div>
 
       <div className={styles.body}>

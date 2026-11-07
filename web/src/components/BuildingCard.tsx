@@ -6,6 +6,7 @@ import { NavigationChevronDown, NavigationChevronUp } from "@vibe/icons";
 
 import type { ListingGroup, ListingSummary } from "@/lib/types";
 import { formatPrice, formatSize, isNew, priceDrop, sourceName } from "@/lib/format";
+import { thumbnail } from "@/lib/photos";
 import { UnitList } from "./UnitList";
 import styles from "./BuildingCard.module.css";
 
@@ -34,12 +35,15 @@ function priceRange(group: ListingGroup): string {
 export function BuildingCard({
   group,
   highlighted,
+  priority,
   seenBefore,
   onHover,
   onFavoriteChange,
 }: {
   group: ListingGroup;
   highlighted?: boolean;
+  /** At the top of the first screen: the photo loads first instead of lazily. */
+  priority?: boolean;
   seenBefore?: string | null;
   onHover?: (key: string | null) => void;
   onFavoriteChange?: (id: string, favorite: boolean) => void;
@@ -67,7 +71,13 @@ export function BuildingCard({
         <div className={styles.photo}>
           {photo ? (
             // eslint-disable-next-line @next/next/no-img-element -- photos come from the source sites' CDNs
-            <img src={photo} alt="" loading="lazy" referrerPolicy="no-referrer" />
+            <img
+              src={thumbnail(photo)}
+              alt=""
+              loading={priority ? "eager" : "lazy"}
+              fetchPriority={priority ? "high" : undefined}
+              referrerPolicy="no-referrer"
+            />
           ) : (
             <span className={styles.noPhoto}>Pas de photo</span>
           )}

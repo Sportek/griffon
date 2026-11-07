@@ -8,6 +8,7 @@ import type {
   ListingGroupPage,
   ListingPage,
   ListingSort,
+  ListingSummary,
   MapPoint,
   SavedSearch,
   TrackedListing,
@@ -58,6 +59,18 @@ const SUMMARY = `
   ${TRACKING}
 `;
 
+/**
+ * A listing as the cards show it: the first photo and how many there are. Some listings
+ * carry dozens of photo URLs, sent with every card of the page for nothing.
+ */
+function card<T extends ListingSummary>(listing: T): T {
+  return { ...listing, photos: listing.photos.slice(0, 1), photoCount: listing.photoCount ?? listing.photos.length };
+}
+
+export function cards<T extends ListingSummary>(listings: T[]): T[] {
+  return listings.map(card);
+}
+
 export async function searchListings(filter: ListingFilter, sort: ListingSort, page: number, size = 30) {
   const data = await gql<{ listings: ListingPage }>(
     `query($filter: ListingFilter, $sort: ListingSort, $page: Int, $size: Int) {
@@ -67,7 +80,7 @@ export async function searchListings(filter: ListingFilter, sort: ListingSort, p
     }`,
     { filter, sort, page, size },
   );
-  return data.listings;
+  return { ...data.listings, content: cards(data.listings.content) };
 }
 
 export async function searchGroups(filter: ListingFilter, sort: ListingSort, page: number, size = 30) {
@@ -83,7 +96,8 @@ export async function searchGroups(filter: ListingFilter, sort: ListingSort, pag
     }`,
     { filter, sort, page, size },
   );
-  return data.listingGroups;
+  const groups = data.listingGroups;
+  return { ...groups, content: groups.content.map((g) => ({ ...g, listings: cards(g.listings) })) };
 }
 
 export async function countListings(filter: ListingFilter) {
@@ -98,7 +112,7 @@ export async function mapListings(filter: ListingFilter, limit = 5000) {
   const data = await gql<{ mapListings: MapPoint[] }>(
     `query($filter: ListingFilter, $limit: Int) {
       mapListings(filter: $filter, limit: $limit) {
-        id latitude longitude price roomsQc bedrooms locationPrecision firstSeenAt buildingKey
+        id latitude longitude price locationPrecision firstSeenAt buildingKey
       }
     }`,
     { filter, limit },
@@ -120,14 +134,29 @@ export async function getListing(id: string) {
     }`,
     { id },
   );
-  return data.listing;
+  return data.listing && { ...data.listing, sameBuilding: cards(data.listing.sameBuilding) };
 }
 
-export async function getFilterOptions() {
-  const data = await gql<{ filterOptions: FilterOptions }>(
-    `{ filterOptions { sources cities neighborhoods propertyTypes amenities utilitiesIncluded } }`,
-  );
-  return data.filterOptions;
+const FILTER_OPTIONS_TTL = 10 * 60_000;
+let filterOptions: { at: number; value: Promise<FilterOptions> } | null = null;
+
+/**
+ * The values the filters offer. Seven distinct scans of the collection that only change
+ * with a scrape: kept ten minutes rather than recomputed for every page view.
+ */
+export function getFilterOptions(): Promise<FilterOptions> {
+  if (!filterOptions || Date.now() - filterOptions.at > FILTER_OPTIONS_TTL) {
+    const value = gql<{ filterOptions: FilterOptions }>(
+      `{ filterOptions { sources cities neighborhoods propertyTypes amenities utilitiesIncluded } }`,
+    ).then((data) => data.filterOptions);
+    const entry = { at: Date.now(), value };
+    filterOptions = entry;
+    // A failure is not kept: the next page view asks again.
+    value.catch(() => {
+      if (filterOptions === entry) filterOptions = null;
+    });
+  }
+  return filterOptions.value;
 }
 
 export async function trackedListings(hidden = false) {
@@ -135,7 +164,7 @@ export async function trackedListings(hidden = false) {
     `query($hidden: Boolean) { trackedListings(hidden: $hidden) { tracking { listingId favorite status notes visitAt hidden priceWhenTracked createdAt updatedAt } listing { ${SUMMARY} } } }`,
     { hidden },
   );
-  return data.trackedListings;
+  return data.trackedListings.map((t) => ({ ...t, listing: t.listing && card(t.listing) }));
 }
 
 export interface TrackingInput {
@@ -212,5 +241,5 @@ export async function recentAlerts(limit = 60) {
     `query($limit: Int) { alerts(limit: $limit) { id reason previousPrice price createdAt savedSearch { id name } listing { ${SUMMARY} } } }`,
     { limit },
   );
-  return data.alerts;
+  return data.alerts.map((a) => ({ ...a, listing: a.listing && card(a.listing) }));
 }
