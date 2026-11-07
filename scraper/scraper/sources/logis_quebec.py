@@ -7,6 +7,14 @@ the regex skips). Each listing page has a schema.org `RealEstateListing`
 JSON-LD block with price, address, geo, beds, baths, floor size, amenities
 and every photo. The HTML adds the "X½" room count, the availability date
 and a "Charges" list (utilities either "Inclus" or a monthly cost).
+
+Since 31 Oct 2026 the whole site (robots.txt included) sits behind a Cloudflare managed
+challenge that ends in an interactive Turnstile "Vérifiez que vous êtes humain" checkbox,
+from residential and other IPs alike: plain HTTP gets `403 cf-mitigated: challenge` and
+headless Chromium stays stuck on the checkbox. That is the site opting out of automated
+access, so this source stops at the first challenge (SourceBlocked) instead of trying to
+get around it; it is left out of `all` and its schedule should stay disabled until the
+site is reachable again (or LogisQuébec grants access).
 """
 
 import json
@@ -18,7 +26,7 @@ import httpx
 from selectolax.parser import HTMLParser
 
 from ..models import Listing
-from ..polite import PoliteClient
+from ..polite import CrawlHealth, PoliteClient
 from ..normalize import (
     clean_text,
     format_postal_code,
@@ -52,6 +60,11 @@ REGIONS = [
 
 # Non-residential listing types published under /a-louer.
 _EXCLUDED_TYPES = ("bureau", "local-commercial", "batisse-commerciale", "autre-garage", "entrepot", "terrain", "stationnement")
+
+# One request per listing plus one per 10-result page: ~6000 for the ~5400 listings of
+# Oct 2026, right at the global 6000 cap (runs ended FAILED, skipping deactivation).
+# Twice that leaves room to grow; SCRAPER_MAX_REQUESTS_LOGIS_QUEBEC overrides it.
+FULL_CRAWL_BUDGET = 12000
 
 HEADERS = {
     "User-Agent": (
@@ -210,13 +223,29 @@ def scrape(
 ) -> Iterator[Listing]:
     regions = regions or REGIONS
     seen: set[str] = set()
-    with PoliteClient(headers=HEADERS, timeout=30, follow_redirects=True, source="logis_quebec") as client:
+    health = CrawlHealth("logis_quebec")
+    with PoliteClient(
+        headers=HEADERS,
+        timeout=30,
+        follow_redirects=True,
+        source="logis_quebec",
+        default_max_requests=FULL_CRAWL_BUDGET,
+    ) as client:
         for region in regions:
+            failed_in_a_row = 0
             for page in range(1, max_pages_per_region + 1):
                 try:
                     rows = _search_page(client, region, page)
-                except httpx.HTTPError:
-                    break
+                except httpx.HTTPError as e:
+                    health.failed("search page", f"{region} page {page}", e)
+                    failed_in_a_row += 1
+                    if failed_in_a_row >= 3:
+                        health.gap(f"{region}: given up after {failed_in_a_row} failed pages in a row (page {page})")
+                        break
+                    time.sleep(delay_s)
+                    continue
+                health.ok("search page")
+                failed_in_a_row = 0
                 new_rows = [r for r in rows if r[0] not in seen]
                 if not new_rows:
                     break
@@ -225,9 +254,14 @@ def scrape(
                     try:
                         resp = client.get(url)
                         resp.raise_for_status()
-                        if listing := _parse_detail(resp.text, url, external_id, type_slug):
-                            yield listing
-                    except Exception:
-                        pass
+                        listing = _parse_detail(resp.text, url, external_id, type_slug)
+                        if listing is None:
+                            raise ValueError("no RealEstateListing JSON-LD on the page")
+                    except Exception as e:  # noqa: BLE001 -- counted; SourceBlocked is not an Exception
+                        health.failed("detail", url, e)
+                    else:
+                        health.ok("detail")
+                        yield listing
                     time.sleep(delay_s)
                 time.sleep(delay_s)
+    health.finish()
