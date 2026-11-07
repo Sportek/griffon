@@ -17,14 +17,13 @@ le plus proche et les commerces essentiels accessibles à pied.
 | Realtor.ca | `realtor_ca` | Playwright, lecture passive de la réponse de recherche de la carte | **Désactivé dans `all`** (lançable explicitement). **Limité** : le site ne répond qu'au premier chargement de carte par session, donc environ 11 annonces par exécution en headless. Au Québec, ces annonces sont des syndications Centris (`extra.mls_number` = `external_id` Centris) : utiliser `centris` pour la couverture complète. |
 | Centris (à vendre) | `centris_sale` | HTTP, pages serveur | Condos, maisons, plex (`--areas`, défaut montreal,laval,longueuil). Évaluation municipale, taxes, frais de copropriété, terrain, unités et revenus des plex. Une recherche plafonnée à 5000 est redécoupée par secteur ; si un secteur reste plafonné, l'exécution échoue à la fin (rien n'est désactivé). `external_id` = `sale-<n° Centris>`. **Hors `all`.** |
 | DuProprio (à vendre) | `duproprio_sale` | HTTP, JSON-LD + HTML | Tout le Québec, du plus récent au plus ancien (~9000 annonces). Coordonnées publiées, évaluation, taxes, frais de copropriété, terrain. **Hors `all`.** |
+| ubee.com | `ubee`, `ubee_sale` | HTTP, API de recherche JSON + `ng-state` de la fiche | Tout le Québec (~470 locations, ~1800 à vendre). Les syndications Centris (numéro MLS) sont écartées : seules les annonces publiées sur ubee (surtout des propriétaires) sont gardées. Coordonnées, photos, évaluation, taxes, plex. **Hors `all`.** Voir [Source ubee](#source-ubee). |
 
 Les sources `*_sale` envoient `listing_type = "sale"` et `price_period = "total"` sous la source
-`centris` / `duproprio` : ce sont des sources d'exécution distinctes (planning, journal, désactivation
-des annonces non revues) mais pas des sources d'annonces distinctes. Elles parcourent des milliers de
-fiches (plusieurs heures) : leur plafond de requêtes est `SCRAPER_SALE_MAX_REQUESTS` (20000).
-ubee.ca (ubee.com) n'est pas une source : ses conditions d'utilisation interdisent l'extraction
-automatisée et la constitution de bases de données à partir de son contenu. Kijiji n'a pas de
-catégorie « à vendre » structurée (annonces génériques sans attributs immobiliers).
+`centris` / `duproprio` / `ubee` : ce sont des sources d'exécution distinctes (planning, journal, désactivation
+des annonces non revues) mais pas des sources d'annonces distinctes. Celles de Centris et DuProprio parcourent
+des milliers de fiches (plusieurs heures) : leur plafond de requêtes est `SCRAPER_SALE_MAX_REQUESTS` (20000).
+Kijiji n'a pas de catégorie « à vendre » structurée (annonces génériques sans attributs immobiliers).
 
 ## Utilisation
 
@@ -121,6 +120,33 @@ LISTINGS_API_URL=... LISTINGS_API_KEY=... python -m scraper.worker
 ```
 
 `WORKER_SOURCES` permet de répartir les sources entre plusieurs workers.
+
+## Source ubee
+
+ubee.ca redirige vers ubee.com. **Ses conditions d'utilisation interdisent l'extraction automatisée** :
+usage privé seulement, empreinte minimale, jamais dans `all` (plannings uniquement). Le robots.txt
+autorise les fiches ; l'hôte de l'API n'en a pas.
+
+1. **Découverte** : l'API de recherche du site (`api.ubee.ca/api/anonymous/Search/offered-properties`,
+   500 annonces par requête) donne toutes les annonces d'un type : 1 requête pour les locations, 4 pour
+   les ventes. Prix, chambres, salles de bain, superficies, coordonnées, adresse, photos, date de mise en ligne.
+   Terrains et locaux commerciaux sont écartés à ce stade (les plex sont gardés).
+2. **Fiche** : la page (Angular rendu serveur) contient la fiche complète dans `<script id="ng-state">` :
+   description, pièces, stationnement, caractéristiques, évaluation municipale, taxes, unités et revenus
+   des plex, provenance.
+3. **Syndications Centris** : une fiche avec `mlsNumber`, une description de source « Centris » ou un lien
+   passerelle.centris.ca est écartée (déjà couverte par `centris`) ; le nombre écarté est journalisé.
+   `skip_centris=False` les garde, avec `extra.mls_number`.
+4. **Cache** (`.cache/ubee.json`, `UBEE_CACHE`, dans le volume `geo-cache` du worker) : les identifiants
+   Centris ne sont plus jamais demandés ; la fiche des autres est réutilisée tant que la carte de
+   recherche ne change pas, `UBEE_DETAIL_MAX_AGE_DAYS` (7) jours au plus.
+
+Politesse : 3 à 7 s entre deux requêtes, la première réponse 403/429 (ou un défi Cloudflare) arrête la
+source sans réessayer, plafond de 800 requêtes (`ubee`) et 2500 (`ubee_sale`), modifiable par
+`SCRAPER_MAX_REQUESTS_UBEE` / `SCRAPER_MAX_REQUESTS_UBEE_SALE`. Une fiche perdue de trop (plus de 2 %)
+ou une recherche incomplète : rien n'est désactivé (`IncompleteCrawl`).
+
+Les personnes ne sont pas extraites : du courtier, seul le nom de l'agence (`agency_name`).
 
 ## Source Facebook
 

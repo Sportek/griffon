@@ -9,7 +9,7 @@ from .geo.config import DEFAULT_CATEGORIES, POI_CATEGORIES, PREFETCH_AREAS, Prox
 from .geo.enrich import Enricher
 from .polite import IncompleteCrawl, SourceBlocked
 from .sinks import JsonlSink, StdoutSink
-from .sources import centris, duproprio, facebook, kijiji, logis_quebec, realtor_ca, rentals_ca
+from .sources import centris, duproprio, facebook, kijiji, logis_quebec, realtor_ca, rentals_ca, ubee
 
 
 def _csv(value: str | None) -> list[str] | None:
@@ -60,13 +60,20 @@ SOURCES = {
         max_pages_per_area=args.max_pages or 250,
     ),
     "duproprio_sale": lambda args: duproprio.scrape_sale(max_pages=args.max_pages or 1000),
+    # ubee.com: the whole site comes from one search request per 500 listings; only the
+    # listings published on ubee itself are kept (Centris syndications are skipped).
+    "ubee": lambda args: ubee.scrape(),
+    "ubee_sale": lambda args: ubee.scrape_sale(),
 }
 
 # realtor_ca: see above. The sale sources walk thousands of pages (hours each): run them
 # explicitly or from a schedule, so "all" stays the rental scrape it always was.
 # logis_quebec: the whole site has been behind an interactive Cloudflare challenge since
 # 31 Oct 2026 (see sources/logis_quebec.py); it stops at the first request until that changes.
-DISABLED_FROM_ALL = {"realtor_ca", "logis_quebec", "facebook", "centris_sale", "duproprio_sale"}
+# ubee, ubee_sale: its terms forbid scraping; private use, small footprint, schedules only.
+DISABLED_FROM_ALL = {
+    "realtor_ca", "logis_quebec", "facebook", "centris_sale", "duproprio_sale", "ubee", "ubee_sale",
+}
 # Sources whose crawl can't tell a removed listing from one it didn't scroll to: they
 # expire through the API's inactivity sweep instead (listings.inactivity.stale-after-by-source).
 NEVER_MARK_UNSEEN = {"facebook"}

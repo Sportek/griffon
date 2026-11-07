@@ -1,0 +1,326 @@
+{
+ "items": [
+  {
+   "id": "2568c104-3f5b-5b74-ba90-00b0660cc5c0",
+   "address": "6969 - A, Rue Rainier",
+   "city": "Montréal (Saint-Léonard)",
+   "province": "QC",
+   "zipCode": "H1T3W9",
+   "country": "Canada",
+   "askPrice": 1350,
+   "slugFr": "condo-6969-a-rue-rainier-2568c1",
+   "slugEn": "condo-6969-a-rue-rainier-2568c1",
+   "citySlug": "montreal",
+   "listingType": "Renter",
+   "inscriptionType": "Condo",
+   "propertyType": null,
+   "buildingType": null,
+   "nbBedrooms": 2,
+   "nbBathrooms": 1,
+   "nbHalfBaths": 0,
+   "livingSurfaceInMeters": 0.0,
+   "landSurfaceInMeters": 0.0,
+   "yearBuilt": 0,
+   "toBuild": false,
+   "isOnlineSince": "2026-08-11T08:30:27.3960193Z",
+   "openHouseDetail": null,
+   "taxable": false,
+   "latitude": 45.58839551,
+   "longitude": -73.59217644,
+   "images": [
+    {
+     "listingVersion": 0,
+     "index": 0,
+     "description": "Facade",
+     "etag": null,
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1786437015/2568c104-3f5b-5b74-ba90-00b0660cc5c0/cde852d5-18cb-5c4b-9155-15abaf25907d",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1786437015/2568c104-3f5b-5b74-ba90-00b0660cc5c0/cde852d5-18cb-5c4b-9155-15abaf25907d",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1786437015/2568c104-3f5b-5b74-ba90-00b0660cc5c0/cde852d5-18cb-5c4b-9155-15abaf25907d"
+     }
+    },
+    {
+     "listingVersion": 0,
+     "index": 1,
+     "description": "EntreeExterieure",
+     "etag": null,
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1786437014/2568c104-3f5b-5b74-ba90-00b0660cc5c0/75a98408-a61f-5671-ae4c-b725be0e2228",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1786437014/2568c104-3f5b-5b74-ba90-00b0660cc5c0/75a98408-a61f-5671-ae4c-b725be0e2228",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1786437014/2568c104-3f5b-5b74-ba90-00b0660cc5c0/75a98408-a61f-5671-ae4c-b725be0e2228"
+     }
+    },
+    {
+     "listingVersion": 0,
+     "index": 2,
+     "description": "HallDEntree",
+     "etag": null,
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1786437016/2568c104-3f5b-5b74-ba90-00b0660cc5c0/c460e6c9-5fc5-5a7c-9baa-ab308e3d2e67",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1786437016/2568c104-3f5b-5b74-ba90-00b0660cc5c0/c460e6c9-5fc5-5a7c-9baa-ab308e3d2e67",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1786437016/2568c104-3f5b-5b74-ba90-00b0660cc5c0/c460e6c9-5fc5-5a7c-9baa-ab308e3d2e67"
+     }
+    }
+   ],
+   "draftImages": [],
+   "externalUrl": null,
+   "rentalPriceFrequency": "Monthly",
+   "pricedPerUnitSquared": null,
+   "estimate": null
+  },
+  {
+   "id": "d3cb9fc5-0898-4942-b95e-7111708f1c08",
+   "address": "104-7995 Av Shelley",
+   "city": "Montréal",
+   "province": "QC",
+   "zipCode": "H1Z 3H5",
+   "country": "Canada",
+   "askPrice": 1650,
+   "slugFr": "condo-104-7995-av-shelley-d3cb9f",
+   "slugEn": "condo-104-7995-av-shelley-d3cb9f",
+   "citySlug": "montreal",
+   "listingType": "Renter",
+   "inscriptionType": "Condo",
+   "propertyType": null,
+   "buildingType": null,
+   "nbBedrooms": 2,
+   "nbBathrooms": 1,
+   "nbHalfBaths": 0,
+   "livingSurfaceInMeters": 60.386976000000004,
+   "landSurfaceInMeters": 0.0,
+   "yearBuilt": 2024,
+   "toBuild": false,
+   "isOnlineSince": "2026-06-19T13:20:17.5282025Z",
+   "openHouseDetail": null,
+   "taxable": false,
+   "latitude": 45.56389617919922,
+   "longitude": -73.60810089111328,
+   "images": [
+    {
+     "listingVersion": 0,
+     "index": 0,
+     "description": "Autre",
+     "etag": "a22b1055381ecad99e170e2bac37bc12",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1781807412/d3cb9fc5-0898-4942-b95e-7111708f1c08/bc8a577e-4f74-4649-97df-fb8102d775e1.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1781807412/d3cb9fc5-0898-4942-b95e-7111708f1c08/bc8a577e-4f74-4649-97df-fb8102d775e1.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1781807412/d3cb9fc5-0898-4942-b95e-7111708f1c08/bc8a577e-4f74-4649-97df-fb8102d775e1.jpg"
+     }
+    },
+    {
+     "listingVersion": 0,
+     "index": 1,
+     "description": "Autre",
+     "etag": "03903160b09a28adac304c3746e5ff3f",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1781807384/d3cb9fc5-0898-4942-b95e-7111708f1c08/d0d9dbf0-9a67-4a5d-9a4a-0ed2ad6aa9e6.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1781807384/d3cb9fc5-0898-4942-b95e-7111708f1c08/d0d9dbf0-9a67-4a5d-9a4a-0ed2ad6aa9e6.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1781807384/d3cb9fc5-0898-4942-b95e-7111708f1c08/d0d9dbf0-9a67-4a5d-9a4a-0ed2ad6aa9e6.jpg"
+     }
+    },
+    {
+     "listingVersion": 0,
+     "index": 2,
+     "description": "Autre",
+     "etag": "777cabd5d1c46c6faf9b7443d8dacc97",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1781807386/d3cb9fc5-0898-4942-b95e-7111708f1c08/ca12cac8-bb93-4108-8e1d-023f43ca61fc.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1781807386/d3cb9fc5-0898-4942-b95e-7111708f1c08/ca12cac8-bb93-4108-8e1d-023f43ca61fc.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1781807386/d3cb9fc5-0898-4942-b95e-7111708f1c08/ca12cac8-bb93-4108-8e1d-023f43ca61fc.jpg"
+     }
+    }
+   ],
+   "draftImages": [],
+   "externalUrl": null,
+   "rentalPriceFrequency": "Monthly",
+   "pricedPerUnitSquared": null,
+   "estimate": null
+  },
+  {
+   "id": "caef42b6-29e7-4c03-802c-0e0d97d1cbbc",
+   "address": "47 Av Fifth",
+   "city": "Pointe-Claire",
+   "province": "QC",
+   "zipCode": "H9S 5C9",
+   "country": "Canada",
+   "askPrice": 3950,
+   "slugFr": "unifamiliale-47-av-fifth-caef42",
+   "slugEn": "single-family-47-av-fifth-caef42",
+   "citySlug": "pointe-claire",
+   "listingType": "Renter",
+   "inscriptionType": "Unifamiliale",
+   "propertyType": "PlainPied",
+   "buildingType": "Isole",
+   "nbBedrooms": 3,
+   "nbBathrooms": 2,
+   "nbHalfBaths": 0,
+   "livingSurfaceInMeters": 185.80608,
+   "landSurfaceInMeters": 515.51896896,
+   "yearBuilt": 1950,
+   "toBuild": false,
+   "isOnlineSince": "2026-06-11T17:04:58.8492207Z",
+   "openHouseDetail": null,
+   "taxable": false,
+   "latitude": 45.44175338745117,
+   "longitude": -73.80564880371094,
+   "images": [
+    {
+     "listingVersion": 1,
+     "index": 0,
+     "description": "Autre",
+     "etag": "2b5bab4e9a97fac43376585676b1b298",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1781190449/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/067be889-ecf4-40db-b4e5-43978aa336c3.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1781190449/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/067be889-ecf4-40db-b4e5-43978aa336c3.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1781190449/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/067be889-ecf4-40db-b4e5-43978aa336c3.jpg"
+     }
+    },
+    {
+     "listingVersion": 1,
+     "index": 1,
+     "description": "Autre",
+     "etag": "54b5ef98f3afb5c1a3efb31cca3e29c5",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1775139223/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/da7bb516-d533-4da3-89e8-a25493bb913a.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1775139223/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/da7bb516-d533-4da3-89e8-a25493bb913a.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1775139223/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/da7bb516-d533-4da3-89e8-a25493bb913a.jpg"
+     }
+    },
+    {
+     "listingVersion": 1,
+     "index": 2,
+     "description": "Autre",
+     "etag": "8c989ac4d92e479279b65c08f27082ec",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1775139224/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/84563c8c-1790-44f2-8ab6-31962900db77.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1775139224/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/84563c8c-1790-44f2-8ab6-31962900db77.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1775139224/caef42b6-29e7-4c03-802c-0e0d97d1cbbc/84563c8c-1790-44f2-8ab6-31962900db77.jpg"
+     }
+    }
+   ],
+   "draftImages": [],
+   "externalUrl": null,
+   "rentalPriceFrequency": "Monthly",
+   "pricedPerUnitSquared": null,
+   "estimate": null
+  },
+  {
+   "id": "2321e847-d221-405c-a913-8078e47dc645",
+   "address": "47 Rue De Rotterdam",
+   "city": "Saint-Augustin-de-Desmaures",
+   "province": "QC",
+   "zipCode": "G3A 1S8",
+   "country": "Canada",
+   "askPrice": 4,
+   "slugFr": "terrain-47-rue-de-rotterdam-2321e8",
+   "slugEn": "land-47-rue-de-rotterdam-2321e8",
+   "citySlug": "saint-augustin-de-desmaures",
+   "listingType": "Renter",
+   "inscriptionType": "Terrain",
+   "propertyType": "Terrain",
+   "buildingType": null,
+   "nbBedrooms": 0,
+   "nbBathrooms": 0,
+   "nbHalfBaths": 0,
+   "livingSurfaceInMeters": 0.0,
+   "landSurfaceInMeters": 2787.0912000000003,
+   "yearBuilt": 0,
+   "toBuild": false,
+   "isOnlineSince": "2025-05-28T19:04:29.7978773Z",
+   "openHouseDetail": null,
+   "taxable": true,
+   "latitude": 46.75204148290041,
+   "longitude": -71.43851696687337,
+   "images": [
+    {
+     "listingVersion": 0,
+     "index": 0,
+     "description": "Autre",
+     "etag": null,
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1748449584/2321e847-d221-405c-a913-8078e47dc645/352d0d65-6840-442e-ba21-a09cacbcd03d",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1748449584/2321e847-d221-405c-a913-8078e47dc645/352d0d65-6840-442e-ba21-a09cacbcd03d",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1748449584/2321e847-d221-405c-a913-8078e47dc645/352d0d65-6840-442e-ba21-a09cacbcd03d"
+     }
+    }
+   ],
+   "draftImages": [],
+   "externalUrl": null,
+   "rentalPriceFrequency": "Monthly",
+   "pricedPerUnitSquared": null,
+   "estimate": null
+  },
+  {
+   "id": "6a78bdf6-9fe0-4ade-908d-6a83e75a7666",
+   "address": "Rue Saint-Jean",
+   "city": "Québec",
+   "province": "QC",
+   "zipCode": "G1R 4W9",
+   "country": "Canada",
+   "askPrice": 1000,
+   "slugFr": "commercial-saint-jean-6a78bd",
+   "slugEn": "commercial-saint-jean-6a78bd",
+   "citySlug": "quebec",
+   "listingType": "Renter",
+   "inscriptionType": "Commercial",
+   "propertyType": "Industrial",
+   "buildingType": null,
+   "nbBedrooms": 0,
+   "nbBathrooms": 0,
+   "nbHalfBaths": 0,
+   "livingSurfaceInMeters": 48.774096,
+   "landSurfaceInMeters": 1337.3392608000001,
+   "yearBuilt": 1973,
+   "toBuild": false,
+   "isOnlineSince": "2026-11-04T15:00:03.0458655Z",
+   "openHouseDetail": null,
+   "taxable": true,
+   "latitude": 46.810752868652344,
+   "longitude": -71.21841430664062,
+   "images": [
+    {
+     "listingVersion": 1,
+     "index": 0,
+     "description": "Autre",
+     "etag": "a5f4144f18ccd7bf85eaa6d27d2e3889",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1789157699/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/38ddf8a7-42dd-40b1-9599-a2109c72ffe2.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1789157699/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/38ddf8a7-42dd-40b1-9599-a2109c72ffe2.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1789157699/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/38ddf8a7-42dd-40b1-9599-a2109c72ffe2.jpg"
+     }
+    },
+    {
+     "listingVersion": 1,
+     "index": 1,
+     "description": "Autre",
+     "etag": "cff3f6e20e26a4589f2021864a69c891",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1793799168/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/bc7b2582-7575-42fd-91d3-7c4ba07b834d.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1793799168/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/bc7b2582-7575-42fd-91d3-7c4ba07b834d.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1793799168/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/bc7b2582-7575-42fd-91d3-7c4ba07b834d.jpg"
+     }
+    },
+    {
+     "listingVersion": 1,
+     "index": 2,
+     "description": "Autre",
+     "etag": "90ff564143ecfd603caa812056c1d2f9",
+     "publicUrls": {
+      "default_size": "https://res.cloudinary.com/ubee-media/image/private/t_default_size/v1789157703/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/9cfedb4f-bf89-41b6-82f4-e6a96603128b.jpg",
+      "small_size": "https://res.cloudinary.com/ubee-media/image/private/t_small_size/v1789157703/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/9cfedb4f-bf89-41b6-82f4-e6a96603128b.jpg",
+      "thumb_size": "https://res.cloudinary.com/ubee-media/image/private/t_thumb_size/v1789157703/6a78bdf6-9fe0-4ade-908d-6a83e75a7666/9cfedb4f-bf89-41b6-82f4-e6a96603128b.jpg"
+     }
+    }
+   ],
+   "draftImages": [],
+   "externalUrl": null,
+   "rentalPriceFrequency": "Monthly",
+   "pricedPerUnitSquared": null,
+   "estimate": null
+  }
+ ],
+ "totalCount": 5,
+ "page": 0,
+ "pageSize": 500,
+ "totalPages": 1
+}
