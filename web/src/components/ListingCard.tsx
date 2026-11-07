@@ -76,6 +76,9 @@ export function ListingCard({
         </div>
         <Link href={`/annonces/${listing.id}`} className={styles.title}>
           {facts.length ? facts.join(" · ") : propertyTypeName(listing.propertyType) ?? "Logement"}
+          <span className="visually-hidden">
+            , {listing.address ?? place}, {formatRent(listing)}
+          </span>
           <span className={styles.stretch} aria-hidden />
         </Link>
         <p className={styles.place}>{place}</p>

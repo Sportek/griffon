@@ -75,7 +75,7 @@ export function BuildingCard({
         </div>
         <div className={styles.summary}>
           <span className={styles.range}>{priceRange(group)}</span>
-          <h3 className={styles.address}>{group.address ?? "Même immeuble"}</h3>
+          <h2 className={styles.address}>{group.address ?? "Même immeuble"}</h2>
           {place && <p className={styles.place}>{place}</p>}
           <p className={styles.mix}>{sizeMix(group.listings)}</p>
           <p className={styles.meta}>
