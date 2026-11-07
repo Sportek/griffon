@@ -67,7 +67,8 @@ class Listing(BaseModel):
 
     price: float | None = None
     price_currency: str = "CAD"
-    price_period: Literal["monthly", "yearly", "unknown"] = "monthly"
+    # "total" is an asking price (listing_type "sale"); rents are "monthly" or "yearly".
+    price_period: Literal["monthly", "yearly", "total", "unknown"] = "monthly"
 
     address: str | None = None
     neighborhood: str | None = None  # e.g. "Villeray/Saint-Michel/Parc-Extension"
@@ -85,6 +86,16 @@ class Listing(BaseModel):
     rooms_qc: float | None = None  # Quebec convention: the "X" in "X 1/2" (e.g. 3 1/2, 4 1/2)
     year_built: int | None = None
     parking_spots: int | None = None
+
+    # For sale: what a buyer weighs besides the asking price. Amounts in CAD.
+    lot_area_sqft: float | None = None
+    municipal_assessment: float | None = None  # évaluation municipale, land + building
+    municipal_assessment_year: int | None = None
+    municipal_taxes_yearly: float | None = None
+    school_taxes_yearly: float | None = None
+    condo_fees_monthly: float | None = None  # frais de copropriété
+    units: int | None = None  # dwellings in the building (plexes)
+    gross_revenue_yearly: float | None = None  # revenus bruts potentiels (plexes)
 
     furnished: bool | None = None
     pets_allowed: bool | None = None

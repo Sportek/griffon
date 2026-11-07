@@ -44,15 +44,26 @@ SOURCES = {
         headless=not args.headed,
         max_tiles=args.max_pages or 400,
     ),
+    # Properties for sale. A source of its own, not an option of "centris" / "duproprio": each
+    # gets its own schedule and ingestion runs, and a run only ever deactivates the listings
+    # of its own kind (see RunScope in listings-api). The listings keep source "centris" /
+    # "duproprio" with listing_type "sale".
+    "centris_sale": lambda args: centris.scrape_sale(
+        areas=_csv(args.areas),
+        max_pages_per_area=args.max_pages or 250,
+    ),
+    "duproprio_sale": lambda args: duproprio.scrape_sale(max_pages=args.max_pages or 1000),
 }
 
-DISABLED_FROM_ALL = {"realtor_ca"}
+# realtor_ca: see above. The sale sources walk thousands of pages (hours each): run them
+# explicitly or from a schedule, so "all" stays the rental scrape it always was.
+DISABLED_FROM_ALL = {"realtor_ca", "centris_sale", "duproprio_sale"}
 
 
 def main() -> None:
     load_dotenv()
 
-    parser = argparse.ArgumentParser(description="Quebec rental listings scraper")
+    parser = argparse.ArgumentParser(description="Quebec listings scraper (rentals; *_sale sources: properties for sale)")
     parser.add_argument("source", choices=[*SOURCES.keys(), "all"])
     parser.add_argument(
         "--out",
@@ -64,7 +75,7 @@ def main() -> None:
         "--areas",
         default=None,
         help="comma-separated areas; meaning depends on the source "
-        "(centris: montreal,laval; logis_quebec: ile-de-montreal; kijiji: montreal or slug:locationId; "
+        "(centris, centris_sale: montreal,laval; logis_quebec: ile-de-montreal; kijiji: montreal or slug:locationId; "
         "rentals_ca: montreal,laval; realtor_ca: montreal,laval)",
     )
     parser.add_argument("--headed", action="store_true", help="show the browser (rentals_ca, realtor_ca)")
