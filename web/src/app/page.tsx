@@ -1,8 +1,8 @@
-import { ApiError, getFilterOptions, mapListings, searchGroups, searchListings } from "@/lib/api";
+import { ApiError, getFilterOptions, searchGroups, searchListings } from "@/lib/api";
 import { asGroups } from "@/lib/groups";
 import { parseSearch, toFilter } from "@/lib/search-params";
 import { suggestRelaxation, type Suggestion } from "@/lib/suggest";
-import type { FilterOptions, ListingGroupPage, MapPoint } from "@/lib/types";
+import type { FilterOptions, ListingGroupPage } from "@/lib/types";
 import { SearchView } from "@/components/search/SearchView";
 
 export const dynamic = "force-dynamic";
@@ -26,15 +26,14 @@ export default async function SearchPage({
   const filter = toFilter(state);
 
   let page = EMPTY_PAGE;
-  let points: MapPoint[] = [];
   let options = NO_OPTIONS;
   let suggestion: Suggestion | null = null;
   let error: string | null = null;
   try {
     const sort = state.tri ?? "NEWEST";
-    [page, points, options] = await Promise.all([
+    // The map's pins are not awaited here: the map fetches them itself (/api/carte).
+    [page, options] = await Promise.all([
       state.unites ? searchListings(filter, sort, 0).then(asGroups) : searchGroups(filter, sort, 0),
-      mapListings(filter, 10_000),
       getFilterOptions(),
     ]);
     if (page.totalListings === 0) suggestion = await suggestRelaxation(state);
@@ -43,6 +42,6 @@ export default async function SearchPage({
   }
 
   return (
-    <SearchView state={state} page={page} points={points} options={options} suggestion={suggestion} error={error} />
+    <SearchView state={state} page={page} options={options} suggestion={suggestion} error={error} />
   );
 }

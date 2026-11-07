@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LngLatBounds, Map as MapLibreMap, NavigationControl, setWorkerUrl, type GeoJSONSource } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { NearbyPlace, NearbyStation } from "@/lib/types";
 import styles from "./ProximityMap.module.css";

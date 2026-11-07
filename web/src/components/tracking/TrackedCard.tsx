@@ -5,6 +5,7 @@ import { Button } from "@vibe/core";
 import { Show } from "@vibe/icons";
 
 import { formatDateTime, formatPrice, formatRent, formatSize, sourceName } from "@/lib/format";
+import { thumbnail } from "@/lib/photos";
 import type { TrackedListing, TrackingStatus } from "@/lib/types";
 import { FavoriteButton } from "../FavoriteButton";
 import { StatusSelect } from "../StatusSelect";
@@ -41,7 +42,7 @@ export function TrackedCard({
     <article className={styles.card} data-compact={compact || undefined}>
       {listing?.photos[0] && !compact && (
         // eslint-disable-next-line @next/next/no-img-element -- photos come from the source sites' CDNs
-        <img src={listing.photos[0]} alt="" className={styles.photo} loading="lazy" referrerPolicy="no-referrer" />
+        <img src={thumbnail(listing.photos[0])} alt="" className={styles.photo} loading="lazy" referrerPolicy="no-referrer" />
       )}
       <div className={styles.body}>
         <div className={styles.top}>

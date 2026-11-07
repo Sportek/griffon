@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl, type GeoJSONSource } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Button, IconButton } from "@vibe/core";
 import { Location, Search } from "@vibe/icons";
 

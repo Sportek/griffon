@@ -33,6 +33,7 @@ export function UnitList({
                 .join(" · ") || sourceName(listing.source)}
             </span>
             <span className={styles.price}>{formatRent(listing)}</span>
+            {listing.address && <span className="visually-hidden">, {listing.address}</span>}
           </Link>
           <span className={styles.aside}>
             <Signals listing={listing} seenBefore={seenBefore} />

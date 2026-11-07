@@ -14,15 +14,19 @@ import type { BoundingBox, FilterOptions, ListingGroup, ListingGroupPage, Listin
 import { BuildingCard } from "../BuildingCard";
 import { ListingCard } from "../ListingCard";
 import { useToast } from "../ToastProvider";
-import { AdvancedFilters } from "./AdvancedFilters";
 import { FilterBar } from "./FilterBar";
-import { SaveAlertModal } from "./SaveAlertModal";
 import styles from "./SearchView.module.css";
 
 const ListingsMap = dynamic(() => import("../map/ListingsMap").then((m) => m.ListingsMap), {
   ssr: false,
   loading: () => <div className={styles.mapLoading} />,
 });
+// Shown on demand: their code (and Vibe's modal, checkboxes...) loads when first opened.
+const AdvancedFilters = dynamic(() => import("./AdvancedFilters").then((m) => m.AdvancedFilters));
+const SaveAlertModal = dynamic(() => import("./SaveAlertModal").then((m) => m.SaveAlertModal));
+
+/** Cards whose photo loads first: those on the first screen. */
+const PRIORITY_CARDS = 3;
 
 const LAST_VISIT_KEY = "griffon:last-visit";
 
@@ -43,6 +47,73 @@ function readPreviousVisit(): string | null {
 
 const noSubscription = () => () => {};
 
+const DESKTOP = "(min-width: 1024px)";
+
+function subscribeDesktop(onChange: () => void) {
+  const query = window.matchMedia(DESKTOP);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/** The map sits beside the list from 1024 px; below, it is behind the "Carte" button. */
+function useDesktop(): boolean {
+  return useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP).matches, () => false);
+}
+
+/**
+ * True once the page has loaded and the browser is idle: the map (a megabyte of
+ * MapLibre, its tiles and pins) waits for the list and its photos, which come first.
+ */
+function useIdleAfterLoad(): boolean {
+  const [idle, setIdle] = useState(false);
+  useEffect(() => {
+    let idleHandle: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const ready = () => {
+      if ("requestIdleCallback" in window) idleHandle = requestIdleCallback(() => setIdle(true), { timeout: 1500 });
+      else timer = setTimeout(() => setIdle(true), 200);
+    };
+    if (document.readyState === "complete") ready();
+    else window.addEventListener("load", ready, { once: true });
+    return () => {
+      window.removeEventListener("load", ready);
+      if (idleHandle !== undefined) cancelIdleCallback(idleHandle);
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, []);
+  return idle;
+}
+
+const NO_POINTS: MapPoint[] = [];
+
+/**
+ * The search's pins, fetched apart from the page: up to 10 000 points, megabytes that
+ * held back the list when they were part of it. The last result stays while the next loads.
+ */
+function useMapPoints(state: SearchState, enabled: boolean, onError: (message: string) => void) {
+  const query = toQueryString(state);
+  const [result, setResult] = useState<{ query: string; points: MapPoint[] } | null>(null);
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    fetch(`/api/carte${query}`, { signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body?.error ?? `La carte a répondu ${response.status}.`);
+        setResult({ query, points: body as MapPoint[] });
+      })
+      .catch((error: Error) => {
+        if (!controller.signal.aborted) onErrorRef.current(error.message || "La carte n'a pas pu se charger.");
+      });
+    return () => controller.abort();
+  }, [query, enabled]);
+  return { points: result?.points ?? NO_POINTS, current: result?.query === query };
+}
+
 /** When the owner last opened the search, so listings found since read as new. */
 function useLastVisit(): string | null {
   const lastVisit = useSyncExternalStore(noSubscription, readPreviousVisit, () => null);
@@ -60,14 +131,12 @@ function useLastVisit(): string | null {
 export function SearchView({
   state,
   page,
-  points,
   options,
   suggestion,
   error,
 }: {
   state: SearchState;
   page: ListingGroupPage;
-  points: MapPoint[];
   options: FilterOptions;
   suggestion: Suggestion | null;
   error: string | null;
@@ -87,6 +156,11 @@ export function SearchView({
   const [alertOpen, setAlertOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const lastVisit = useLastVisit();
+  const isDesktop = useDesktop();
+  const idle = useIdleAfterLoad();
+  const showMap = idle && (isDesktop || view === "map");
+  const showError = useCallback((message: string) => toast.show(message, "negative"), [toast]);
+  const map = useMapPoints(state, idle && !error, showError);
 
   // A new search from the server replaces the list (and the extra pages loaded so far).
   if (page !== lastPage) {
@@ -178,7 +252,7 @@ export function SearchView({
       current.map((g) => ({ ...g, listings: g.listings.map((l) => withFavorite(l, id, favorite)) })),
     );
 
-  const located = points.length;
+  const located = map.current ? map.points.length : null;
   const total = currentPage.totalListings;
   const buildings = groups.filter((g) => g.count > 1).length;
 
@@ -206,7 +280,16 @@ export function SearchView({
                   {!state.unites && currentPage.totalGroups < total
                     ? `${currentPage.totalGroups.toLocaleString("fr-CA")} adresses · `
                     : ""}
-                  toutes sources, sans doublons · {located.toLocaleString("fr-CA")} sur la carte
+                  toutes sources, sans doublons
+                  {located != null ? (
+                    ` · ${located.toLocaleString("fr-CA")} sur la carte`
+                  ) : (
+                    // Holds the place of the count until the pins arrive, so nothing moves.
+                    <span className={styles.awaiting} aria-hidden>
+                      {" "}
+                      · 0 000 sur la carte
+                    </span>
+                  )}
                 </>
               )}
             </span>
@@ -242,10 +325,11 @@ export function SearchView({
             />
           ) : (
             <ol className={styles.list}>
-              {groups.map((group) => (
+              {groups.map((group, index) => (
                 <li key={group.key} data-group={group.key}>
                   <SearchItem
                     group={group}
+                    priority={index < PRIORITY_CARDS}
                     highlighted={selected === group.key || hovered === group.key}
                     seenBefore={lastVisit}
                     onHover={setHovered}
@@ -266,14 +350,18 @@ export function SearchView({
         </section>
 
         <section className={styles.mapPane} aria-label="Carte">
-          <ListingsMap
-            points={points}
-            activeId={hovered ?? selected}
-            onSelect={select}
-            onSearchArea={searchArea}
-            loading={pending}
-            className={styles.map}
-          />
+          {showMap ? (
+            <ListingsMap
+              points={map.points}
+              activeId={hovered ?? selected}
+              onSelect={select}
+              onSearchArea={searchArea}
+              loading={pending || !map.current}
+              className={styles.map}
+            />
+          ) : (
+            <div className={styles.mapLoading} />
+          )}
           {preview && (
             <div className={styles.preview}>
               <SearchItem group={preview} seenBefore={lastVisit} onFavoriteChange={favoriteChanged} />
@@ -318,6 +406,7 @@ function SearchItem({
 }: {
   group: ListingGroup;
   highlighted?: boolean;
+  priority?: boolean;
   seenBefore?: string | null;
   onHover?: (key: string | null) => void;
   onFavoriteChange?: (id: string, favorite: boolean) => void;

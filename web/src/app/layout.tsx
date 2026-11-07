@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 
 import "./vibe.generated.css";
-import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 import { AppShell } from "@/components/AppShell";

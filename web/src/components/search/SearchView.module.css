@@ -46,6 +46,11 @@
   color: var(--secondary-text-color);
 }
 
+.awaiting {
+  visibility: hidden;
+  white-space: pre;
+}
+
 .list {
   display: flex;
   flex-direction: column;

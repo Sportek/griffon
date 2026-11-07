@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  productionBrowserSourceMaps: true,
   agentRules: false,
   // The home directory holds a stray package-lock.json that Next would take for the root.
   turbopack: { root: process.cwd() },

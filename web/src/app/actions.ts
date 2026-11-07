@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import {
   ApiError,
+  cards,
   createSavedSearch,
   deleteSavedSearch,
   getListing,
@@ -62,7 +63,10 @@ export async function loadMapPoints(state: SearchState, within?: BoundingBox): P
 
 /** A pin's listing, when it is not in the loaded page of the list. */
 export async function loadListingSummary(id: string): Promise<Result<ListingSummary | null>> {
-  return attempt(async () => (await getListing(id)) as ListingSummary | null);
+  return attempt(async () => {
+    const listing = (await getListing(id)) as ListingSummary | null;
+    return listing && cards([listing])[0];
+  });
 }
 
 export async function saveTracking(listingId: string, input: TrackingInput): Promise<Result<Tracking>> {
