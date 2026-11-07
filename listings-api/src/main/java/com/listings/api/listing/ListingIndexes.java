@@ -41,6 +41,9 @@ class ListingIndexes implements ApplicationRunner {
 				new IndexModel(Indexes.ascending(Keys.NEIGHBORHOOD)),
 				new IndexModel(Indexes.ascending(Keys.AMENITIES)),
 				new IndexModel(Indexes.ascending("source", "active", "lastSeenAt")),
+				// Deactivation is scoped by run (rentals or sales of a source), searches by type.
+				new IndexModel(Indexes.ascending("source", "listingType", "active", "lastSeenAt")),
+				new IndexModel(Indexes.compoundIndex(Indexes.ascending("listingType"), Indexes.descending("firstSeenAt"))),
 				new IndexModel(Indexes.ascending(DuplicateDetector.KEY), new IndexOptions().sparse(true)),
 				new IndexModel(Indexes.ascending("duplicateOf"), new IndexOptions().sparse(true)),
 				new IndexModel(Indexes.ascending(Buildings.KEY), new IndexOptions().sparse(true)),

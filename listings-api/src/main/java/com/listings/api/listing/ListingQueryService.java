@@ -130,7 +130,8 @@ public class ListingQueryService {
 		List<String> ids = rows.stream().flatMap(r -> r.getList("ids", Object.class).stream()).map(ListingQueryService::hex).toList();
 		Map<String, Listing> byId = findByIds(ids);
 		Map<String, Integer> buildingSizes = buildingSizes(
-				rows.stream().map(r -> r.get("_id")).filter(String.class::isInstance).map(String.class::cast).toList());
+				rows.stream().map(r -> r.get("_id")).filter(String.class::isInstance).map(String.class::cast).toList(),
+				(filter != null) ? filter.listingType() : null);
 
 		List<ListingGroup> groups = new ArrayList<>();
 		for (Document row : rows) {
@@ -151,7 +152,10 @@ public class ListingQueryService {
 		return new ListingGroupPage(groups, page, size, totalGroups, totalListings);
 	}
 
-	/** The other units on offer in the listing's building: active, not duplicates, cheapest first. */
+	/**
+	 * The other units on offer in the listing's building, of the same kind (for rent, or for
+	 * sale): active, not duplicates, cheapest first.
+	 */
 	public List<Listing> sameBuilding(Listing listing, String buildingKey) {
 		if (buildingKey == null) {
 			return List.of();
@@ -163,7 +167,9 @@ public class ListingQueryService {
 			.and("active")
 			.ne(false)
 			.and("duplicateOf")
-			.is(null));
+			.is(null)
+			.and("listingType")
+			.is(listing.listingType().name()));
 		return mongo.find(query, Listing.class).stream().sorted(BY_PRICE).toList();
 	}
 
@@ -174,14 +180,20 @@ public class ListingQueryService {
 		return (doc != null) ? doc.getString(Buildings.KEY) : null;
 	}
 
-	/** Active, non-duplicate listings per building, whatever the search. */
-	private Map<String, Integer> buildingSizes(List<String> keys) {
+	/**
+	 * Active, non-duplicate listings per building, whatever the rest of the search: of the
+	 * searched kind only, so a building's rentals are not counted among its units for sale.
+	 */
+	private Map<String, Integer> buildingSizes(List<String> keys, ListingType listingType) {
 		if (keys.isEmpty()) {
 			return Map.of();
 		}
 		Document match = new Document(Buildings.KEY, new Document("$in", keys))
 			.append("active", new Document("$ne", false))
 			.append("duplicateOf", null);
+		if (listingType != null) {
+			match.append("listingType", listingType.name());
+		}
 		Map<String, Integer> sizes = new HashMap<>();
 		mongo.getCollection(Listing.COLLECTION)
 			.aggregate(List.of(new Document("$match", match),
@@ -234,6 +246,8 @@ public class ListingQueryService {
 	/**
 	 * Median price of active, non-duplicate listings of the same size as this one, in its
 	 * neighbourhood or, failing enough of them, its city. Null when there is nothing to compare.
+	 * Rents are compared with rents and asking prices with asking prices; a property for sale
+	 * is also compared with its own property type only (a condo is not a house).
 	 */
 	public PriceBenchmark priceBenchmark(Listing listing) {
 		if (listing.price() == null || listing.price() <= 0) {
@@ -244,7 +258,14 @@ public class ListingQueryService {
 			.append("listingType", listing.listingType().name())
 			.append("pricePeriod", listing.pricePeriod().name())
 			.append("price", new Document("$gt", 0));
-		if (listing.roomsQc() != null) {
+		if (listing.listingType() == ListingType.SALE) {
+			// The "X 1/2" of a property for sale is unreliable (a plex has several): bedrooms.
+			if (listing.bedrooms() == null || listing.propertyType() == null) {
+				return null;
+			}
+			base.append("bedrooms", listing.bedrooms()).append("propertyType", listing.propertyType());
+		}
+		else if (listing.roomsQc() != null) {
 			base.append("roomsQc", listing.roomsQc());
 		}
 		else if (listing.bedrooms() != null) {
@@ -284,13 +305,21 @@ public class ListingQueryService {
 		return mongo.remove(Query.query(Criteria.where("_id").is(id)), Listing.class).getDeletedCount() > 0;
 	}
 
+	/**
+	 * Without a listing type in the filter, the price aggregates cover the rentals only (a rent
+	 * and an asking price do not average): byListingType has the prices of each kind.
+	 */
 	public ListingStats stats(ListingFilter filter) {
 		Document match = new Document("$match", query(filter));
+		Object price = (filter != null && filter.listingType() != null) ? "$price"
+				: new Document("$cond", Arrays.asList(new Document("$eq", List.of("$listingType", ListingType.SALE.name())),
+						null, "$price"));
 		Document facet = new Document("$facet", new Document()
-			.append("overall", List.of(group(null)))
-			.append("bySource", List.of(group("$source"), sortByCount()))
-			.append("byCity", List.of(group("$city"), sortByCount(), new Document("$limit", 50)))
-			.append("byRoomsQc", List.of(group("$roomsQc"), new Document("$sort", new Document("_id", 1)))));
+			.append("overall", List.of(group(null, price)))
+			.append("bySource", List.of(group("$source", price), sortByCount()))
+			.append("byCity", List.of(group("$city", price), sortByCount(), new Document("$limit", 50)))
+			.append("byRoomsQc", List.of(group("$roomsQc", price), new Document("$sort", new Document("_id", 1))))
+			.append("byListingType", List.of(group("$listingType", "$price"), sortByCount())));
 
 		Document result = mongo.getCollection(Listing.COLLECTION)
 			.aggregate(List.of(match, facet))
@@ -300,7 +329,8 @@ public class ListingQueryService {
 		List<StatsBucket> overall = buckets(result, "overall");
 		StatsBucket all = overall.isEmpty() ? new StatsBucket(null, 0, null, null, null) : overall.get(0);
 		return new ListingStats(all.count(), all.avgPrice(), all.minPrice(), all.maxPrice(),
-				buckets(result, "bySource"), buckets(result, "byCity"), buckets(result, "byRoomsQc"));
+				buckets(result, "bySource"), buckets(result, "byCity"), buckets(result, "byRoomsQc"),
+				buckets(result, "byListingType"));
 	}
 
 	public FilterOptions filterOptions() {
@@ -357,11 +387,11 @@ public class ListingQueryService {
 			.toList();
 	}
 
-	private static Document group(String key) {
+	private static Document group(String key, Object price) {
 		return new Document("$group", new Document("_id", key).append("count", new Document("$sum", 1))
-			.append("avgPrice", new Document("$avg", "$price"))
-			.append("minPrice", new Document("$min", "$price"))
-			.append("maxPrice", new Document("$max", "$price")));
+			.append("avgPrice", new Document("$avg", price))
+			.append("minPrice", new Document("$min", price))
+			.append("maxPrice", new Document("$max", price)));
 	}
 
 	private static Document sortByCount() {

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import com.listings.api.listing.Listing;
+import com.listings.api.listing.ListingFilter;
 import com.listings.api.listing.ListingPage;
 import com.listings.api.listing.ListingQueryService;
 import com.listings.api.listing.ListingSort;
@@ -58,7 +59,8 @@ class AlertController {
 
 	@SchemaMapping
 	ListingPage matches(SavedSearch search, @Argument Integer page, @Argument Integer size) {
-		return listings.search(search.filter(), ListingSort.NEWEST, (page != null) ? page : 0,
+		return listings.search(ListingFilter.rentalsUnlessTyped(search.filter()), ListingSort.NEWEST,
+				(page != null) ? page : 0,
 				(size != null) ? size : 20);
 	}
 

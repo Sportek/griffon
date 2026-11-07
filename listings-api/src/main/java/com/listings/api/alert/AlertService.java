@@ -148,7 +148,7 @@ public class AlertService {
 		if (ids.isEmpty()) {
 			return Map.of();
 		}
-		Document query = ListingFilterMapper.toQuery(filter);
+		Document query = ListingFilterMapper.toQuery(ListingFilter.rentalsUnlessTyped(filter));
 		query.append("_id", new Document("$in", ids.stream().map(ObjectId::new).toList()));
 		return mongo.find(new BasicQuery(query), Listing.class)
 			.stream()

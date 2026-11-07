@@ -65,12 +65,20 @@ class DuplicateDetector {
 
 	/** Null when the listing has no civic address or no bedroom count to compare on. */
 	static String key(String address, Double bedrooms) {
+		return key(address, bedrooms, ListingType.RENT);
+	}
+
+	/**
+	 * Properties for sale get keys of their own ("sale|..."): a unit for sale and the same
+	 * unit for rent are two offers, never duplicates of each other. Rental keys are unchanged.
+	 */
+	static String key(String address, Double bedrooms, ListingType listingType) {
 		String street = streetKey(address);
 		if (street == null || bedrooms == null) {
 			return null;
 		}
 		String beds = (bedrooms == Math.rint(bedrooms)) ? String.valueOf(bedrooms.longValue()) : bedrooms.toString();
-		return street + "|" + beds;
+		return (listingType == ListingType.SALE ? "sale|" : "") + street + "|" + beds;
 	}
 
 	/**

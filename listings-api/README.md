@@ -62,12 +62,20 @@ mutation {
   c: saveScrapeSchedule(input: { source: "centris",      cron: "0 0 6 * * *" }) { nextRunAt }
   d: saveScrapeSchedule(input: { source: "logis_quebec", cron: "0 0 8 * * *" }) { nextRunAt }
   e: saveScrapeSchedule(input: { source: "rentals_ca",   cron: "0 0 10 * * *", params: { areas: ["montreal", "laval"] } }) { nextRunAt }
+  # À vendre : des milliers de fiches par exécution (plusieurs heures), une fois par semaine.
+  f: saveScrapeSchedule(input: { source: "duproprio_sale", cron: "0 0 12 * * SAT", params: { markUnseenInactive: true } }) { nextRunAt }
+  g: saveScrapeSchedule(input: { source: "centris_sale",   cron: "0 0 12 * * SUN", params: { markUnseenInactive: true } }) { nextRunAt }
 }
 mutation { triggerScrape(source: "kijiji", params: { limit: 50 }) { id status } }   # lancer maintenant
 { ingestionRuns(limit: 10) { source status trigger worker queuedAt startedAt finishedAt received created error } }
 ```
 
 Une source n'a jamais deux exécutions en même temps : un créneau qui tombe pendant une exécution est sauté.
+
+Une source suffixée `_sale` couvre les propriétés à vendre d'un site : `centris_sale` écrit des annonces
+`source: "centris"`, `listingType: SALE`, `pricePeriod: TOTAL`. Une exécution refuse les annonces de l'autre
+type et ne désactive que celles du sien (une exécution `centris` ne touche jamais aux ventes Centris).
+Le seuil d'inactivité des ventes est de 10 jours (`INACTIVITY_STALE_AFTER_SALE`).
 
 ## Alimenter depuis le scraper
 

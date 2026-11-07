@@ -59,7 +59,11 @@ type Mutation {
     "Supprime un listing par son id. Renvoie false s'il n'existait pas."
     deleteListing(id: ID!): Boolean!
 
-    "Démarre une exécution du scraper pour une source."
+    """
+    Démarre une exécution du scraper pour une source. Une source suffixée _sale (centris_sale) couvre les
+    annonces à vendre de la source (listings source centris, listingType SALE) ; sans suffixe, ses locations.
+    Une exécution n'accepte et ne désactive que les annonces de son type.
+    """
     startIngestionRun(source: String!): IngestionRun!
     """
     Termine une exécution. Avec markUnseenInactive (et status SUCCEEDED), les listings de la source
@@ -91,8 +95,10 @@ type Mutation {
     updateTracking(listingId: ID!, input: TrackingInput!): Tracking!
 }
 
+"RENT : à louer ; SALE : à vendre."
 enum ListingType { RENT, SALE, UNKNOWN }
-enum PricePeriod { MONTHLY, YEARLY, UNKNOWN }
+"MONTHLY / YEARLY pour un loyer, TOTAL pour un prix demandé (SALE)."
+enum PricePeriod { MONTHLY, YEARLY, TOTAL, UNKNOWN }
 
 enum ListingSort {
     "Découverts le plus récemment en premier."
@@ -141,6 +147,22 @@ type Listing {
     yearBuilt: Int
     parkingSpots: Int
 
+    "À vendre : superficie du terrain (pi²)."
+    lotAreaSqft: Float
+    "À vendre : évaluation municipale totale (terrain + bâtiment), en $."
+    municipalAssessment: Float
+    municipalAssessmentYear: Int
+    "À vendre : taxes municipales annuelles, en $."
+    municipalTaxesYearly: Float
+    "À vendre : taxes scolaires annuelles, en $."
+    schoolTaxesYearly: Float
+    "À vendre : frais de copropriété mensuels, en $."
+    condoFeesMonthly: Float
+    "À vendre : nombre de logements de l'immeuble (plex)."
+    units: Int
+    "À vendre : revenus bruts potentiels annuels (plex), en $."
+    grossRevenueYearly: Float
+
     furnished: Boolean
     petsAllowed: Boolean
     smokingAllowed: Boolean
@@ -188,7 +210,10 @@ type Listing {
     "Les autres annonces du même groupe de doublons (même adresse, mêmes chambres, prix proche)."
     duplicates: [Listing!]!
 
-    "Comparaison avec le prix médian des annonces actives de même taille du quartier (ou de la ville)."
+    """
+    Comparaison avec le prix médian des annonces actives de même taille du quartier (ou de la ville),
+    du même type d'offre (loyers entre eux, prix demandés entre eux ; à vendre : même type de propriété).
+    """
     priceBenchmark: PriceBenchmark
     "Suivi personnel de l'annonce (favori, statut, notes), null si elle n'est pas suivie."
     tracking: Tracking
@@ -196,7 +221,7 @@ type Listing {
     buildingKey: String
     "Numéro de logement extrait de l'adresse (app. 5516, #3201, 401-962...), en minuscules."
     unit: String
-    "Les autres logements actifs du même immeuble, hors doublons, du moins cher au plus cher."
+    "Les autres logements actifs du même immeuble et du même type d'offre (à louer / à vendre), hors doublons, du moins cher au plus cher."
     sameBuilding: [Listing!]!
 }
 
@@ -310,9 +335,14 @@ input ListingFilter {
     region: String
     "Préfixe du code postal, ex: \"H2\" ou \"G1W\"."
     postalCodePrefix: String
+    """
+    À louer ou à vendre. Sans valeur : les deux (les prix ne sont alors pas comparables). Une recherche
+    sauvegardée sans valeur est une recherche de locations.
+    """
     listingType: ListingType
     propertyTypes: [String!]
 
+    "Loyer, ou prix demandé pour listingType SALE."
     minPrice: Float
     maxPrice: Float
     minBedrooms: Float
@@ -323,7 +353,14 @@ input ListingFilter {
     minAreaSqft: Float
     maxAreaSqft: Float
     minYearBuilt: Int
+    maxYearBuilt: Int
     minParkingSpots: Int
+    "À vendre : superficie minimale du terrain (pi²)."
+    minLotAreaSqft: Float
+    "À vendre : frais de copropriété mensuels maximum. Une propriété sans frais connus (maison, plex) passe."
+    maxCondoFeesMonthly: Float
+    "À vendre : nombre minimal de logements (plex)."
+    minUnits: Int
 
     furnished: Boolean
     petsAllowed: Boolean
@@ -385,7 +422,8 @@ input ListingInput {
 
     price: Float
     priceCurrency: String
-    pricePeriod: PricePeriod = MONTHLY
+    "Défaut : MONTHLY, ou TOTAL pour listingType SALE."
+    pricePeriod: PricePeriod
 
     address: String
     neighborhood: String
@@ -403,6 +441,15 @@ input ListingInput {
     roomsQc: Float
     yearBuilt: Int
     parkingSpots: Int
+
+    lotAreaSqft: Float
+    municipalAssessment: Float
+    municipalAssessmentYear: Int
+    municipalTaxesYearly: Float
+    schoolTaxesYearly: Float
+    condoFeesMonthly: Float
+    units: Int
+    grossRevenueYearly: Float
 
     furnished: Boolean
     petsAllowed: Boolean
@@ -479,6 +526,10 @@ type IngestionRun {
     error: String
 }
 
+"""
+Sans listingType dans le filtre, les prix (avgPrice, minPrice, maxPrice et ceux des répartitions) ne portent
+que sur les locations : un loyer et un prix demandé ne se moyennent pas. byListingType donne ceux de chaque type.
+"""
 type ListingStats {
     count: Int!
     avgPrice: Float
@@ -487,6 +538,7 @@ type ListingStats {
     bySource: [StatsBucket!]!
     byCity: [StatsBucket!]!
     byRoomsQc: [StatsBucket!]!
+    byListingType: [StatsBucket!]!
 }
 
 type StatsBucket {
@@ -560,7 +612,11 @@ type SavedFilter {
     minAreaSqft: Float
     maxAreaSqft: Float
     minYearBuilt: Int
+    maxYearBuilt: Int
     minParkingSpots: Int
+    minLotAreaSqft: Float
+    maxCondoFeesMonthly: Float
+    minUnits: Int
     furnished: Boolean
     petsAllowed: Boolean
     smokingAllowed: Boolean
