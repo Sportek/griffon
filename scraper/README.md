@@ -119,6 +119,14 @@ docker compose -f compose.worker.yaml --env-file .env.worker up -d --build
 LISTINGS_API_URL=... LISTINGS_API_KEY=... python -m scraper.worker
 ```
 
+Lancer à la main (file d'attente FIFO, un scrape à la fois : les sources s'enchaînent dans l'ordre) :
+
+```bash
+python -m scraper.trigger ubee ubee_sale facebook --watch   # paramètres du planning de chaque source
+python -m scraper.trigger centris --max-pages 1             # test rapide, ne désactive jamais rien
+python -m scraper.trigger --status                          # en cours, en attente, derniers runs
+```
+
 `WORKER_SOURCES` permet de répartir les sources entre plusieurs workers.
 
 ## Source ubee
