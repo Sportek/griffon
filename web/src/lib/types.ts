@@ -14,6 +14,9 @@ export type ListingSort =
   | "AREA_DESC"
   | "RECENTLY_UPDATED";
 
+/** RENT: à louer; SALE: à vendre. */
+export type ListingType = "RENT" | "SALE";
+
 export interface BoundingBox {
   south: number;
   west: number;
@@ -23,6 +26,7 @@ export interface BoundingBox {
 
 /** Mirrors the API's ListingFilter input (only the fields the app uses). */
 export interface ListingFilter {
+  listingType?: ListingType;
   sources?: string[];
   cities?: string[];
   neighborhoods?: string[];
@@ -35,6 +39,10 @@ export interface ListingFilter {
   minAreaSqft?: number;
   minBathrooms?: number;
   minParkingSpots?: number;
+  minYearBuilt?: number;
+  minLotAreaSqft?: number;
+  maxCondoFeesMonthly?: number;
+  minUnits?: number;
   furnished?: boolean;
   petsAllowed?: boolean;
   smokingAllowed?: boolean;
@@ -74,9 +82,11 @@ export interface ListingSummary {
   source: string;
   url: string;
   title: string | null;
+  listingType: ListingType | "UNKNOWN";
   propertyType: string | null;
   price: number | null;
-  pricePeriod: "MONTHLY" | "YEARLY" | "UNKNOWN";
+  /** TOTAL: an asking price (listingType SALE). */
+  pricePeriod: "MONTHLY" | "YEARLY" | "TOTAL" | "UNKNOWN";
   address: string | null;
   /** Apartment number parsed from the address ("1804"), when the source gives one. */
   unit: string | null;
@@ -92,6 +102,12 @@ export interface ListingSummary {
   furnished: boolean | null;
   petsAllowed: boolean | null;
   parkingSpots: number | null;
+  yearBuilt: number | null;
+  /** For sale. */
+  condoFeesMonthly: number | null;
+  /** For sale: dwellings of a plex. */
+  units: number | null;
+  lotAreaSqft: number | null;
   availableDate: string | null;
   utilitiesIncluded: string[];
   photos: string[];
@@ -155,10 +171,13 @@ export interface PriceBenchmark {
 
 export interface ListingDetail extends Omit<ListingSummary, "duplicates"> {
   externalId: string;
-  listingType: string;
   region: string | null;
   postalCode: string | null;
-  yearBuilt: number | null;
+  municipalAssessment: number | null;
+  municipalAssessmentYear: number | null;
+  municipalTaxesYearly: number | null;
+  schoolTaxesYearly: number | null;
+  grossRevenueYearly: number | null;
   smokingAllowed: boolean | null;
   leaseTerm: string | null;
   amenities: string[];

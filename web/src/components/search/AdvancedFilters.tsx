@@ -14,7 +14,7 @@ import {
 } from "@vibe/core";
 
 import { AMENITIES, NEARBY, propertyTypeName, SERVICES, sourceName } from "@/lib/format";
-import type { SearchState } from "@/lib/search-params";
+import { isSale, type SearchState } from "@/lib/search-params";
 import type { FilterOptions } from "@/lib/types";
 import styles from "./AdvancedFilters.module.css";
 
@@ -31,6 +31,7 @@ const BATHROOMS: Option<number>[] = [
   { value: 1, label: "1 salle de bain et +" },
   { value: 2, label: "2 salles de bain et +" },
 ];
+const UNITS: Option<number>[] = [2, 3, 4, 5, 6].map((v) => ({ value: v, label: `${v} logements et +` }));
 
 function toggle(list: string[] | undefined, value: string, on: boolean): string[] | undefined {
   const next = on ? [...(list ?? []), value] : (list ?? []).filter((v) => v !== value);
@@ -55,6 +56,10 @@ const RESET: Partial<SearchState> = {
   sources: undefined,
   photos: undefined,
   retirees: undefined,
+  annee: undefined,
+  terrain: undefined,
+  frais: undefined,
+  logements: undefined,
 };
 
 export function AdvancedFilters({
@@ -74,6 +79,7 @@ export function AdvancedFilters({
   const [draft, setDraft] = useState<SearchState>(state);
   const set = (changes: Partial<SearchState>) => setDraft((d) => ({ ...d, ...changes }));
 
+  const sale = isSale(draft);
   const types: Option<string>[] = options.propertyTypes.map((t) => ({ value: t, label: propertyTypeName(t) ?? t }));
   const cities: Option<string>[] = options.cities.map((c) => ({ value: c, label: c }));
 
@@ -94,35 +100,37 @@ export function AdvancedFilters({
               <div className={styles.row}>
                 <NumberField
                   id="filter-price-min"
-                  label="Prix minimum ($)"
+                  label={sale ? "Prix minimum ($)" : "Loyer minimum ($/mois)"}
                   value={draft.prixMin ?? null}
                   min={0}
-                  step={50}
+                  step={sale ? 10_000 : 50}
                   onChange={(v) => set({ prixMin: v ?? undefined })}
                 />
                 <NumberField
                   id="filter-price-max"
-                  label="Prix maximum ($)"
+                  label={sale ? "Prix maximum ($)" : "Loyer maximum ($/mois)"}
                   value={draft.prixMax ?? null}
                   min={0}
-                  step={50}
+                  step={sale ? 10_000 : 50}
                   onChange={(v) => set({ prixMax: v ?? undefined })}
                 />
               </div>
             </section>
 
             <section className={styles.section}>
-              <h3 className={styles.heading}>Logement</h3>
+              <h3 className={styles.heading}>{sale ? "Propriété" : "Logement"}</h3>
               <div className={styles.row}>
-                <Dropdown
-                  label="Taille maximale"
-                  placeholder="Peu importe"
-                  options={MAX_SIZES}
-                  value={MAX_SIZES.find((o) => o.value === draft.tailleMax)}
-                  clearable
-                  onChange={(o: Option<number> | null) => set({ tailleMax: o?.value })}
-                  onClear={() => set({ tailleMax: undefined })}
-                />
+                {!sale && (
+                  <Dropdown
+                    label="Taille maximale"
+                    placeholder="Peu importe"
+                    options={MAX_SIZES}
+                    value={MAX_SIZES.find((o) => o.value === draft.tailleMax)}
+                    clearable
+                    onChange={(o: Option<number> | null) => set({ tailleMax: o?.value })}
+                    onClear={() => set({ tailleMax: undefined })}
+                  />
+                )}
                 <Dropdown
                   label="Chambres"
                   placeholder="Peu importe"
@@ -152,8 +160,53 @@ export function AdvancedFilters({
                   onChange={(v) => set({ superficie: v ?? undefined })}
                 />
               </div>
+              {sale && (
+                <>
+                  <div className={styles.row}>
+                    <NumberField
+                      id="filter-year-built"
+                      label="Construite en ou après"
+                      value={draft.annee ?? null}
+                      min={1800}
+                      max={2100}
+                      step={5}
+                      onChange={(v) => set({ annee: v ?? undefined })}
+                    />
+                    <NumberField
+                      id="filter-lot"
+                      label="Terrain minimum (pi²)"
+                      value={draft.terrain ?? null}
+                      min={0}
+                      step={500}
+                      onChange={(v) => set({ terrain: v ?? undefined })}
+                    />
+                  </div>
+                  <div className={styles.row}>
+                    <NumberField
+                      id="filter-condo-fees"
+                      label="Frais de copropriété max. ($/mois)"
+                      value={draft.frais ?? null}
+                      min={0}
+                      step={50}
+                      onChange={(v) => set({ frais: v ?? undefined })}
+                    />
+                    <Dropdown
+                      label="Plex"
+                      placeholder="Peu importe"
+                      options={UNITS}
+                      value={UNITS.find((o) => o.value === draft.logements)}
+                      clearable
+                      onChange={(o: Option<number> | null) => set({ logements: o?.value })}
+                      onClear={() => set({ logements: undefined })}
+                    />
+                  </div>
+                  <p className={styles.hint}>
+                    Les maisons et les plex n&apos;ont pas de frais de copropriété : ils restent affichés avec ce filtre.
+                  </p>
+                </>
+              )}
               <Dropdown
-                label="Type de logement"
+                label={sale ? "Type de propriété" : "Type de logement"}
                 placeholder="Tous les types"
                 multi
                 options={types}
@@ -180,18 +233,22 @@ export function AdvancedFilters({
             </section>
 
             <section className={styles.section}>
-              <h3 className={styles.heading}>Conditions</h3>
+              <h3 className={styles.heading}>{sale ? "Stationnement" : "Conditions"}</h3>
               <div className={styles.checks}>
-                <Checkbox
-                  label="Animaux acceptés"
-                  checked={!!draft.animaux}
-                  onChange={(e) => set({ animaux: e.target.checked || undefined })}
-                />
-                <Checkbox
-                  label="Meublé ou semi-meublé"
-                  checked={!!draft.meuble}
-                  onChange={(e) => set({ meuble: e.target.checked || undefined })}
-                />
+                {!sale && (
+                  <>
+                    <Checkbox
+                      label="Animaux acceptés"
+                      checked={!!draft.animaux}
+                      onChange={(e) => set({ animaux: e.target.checked || undefined })}
+                    />
+                    <Checkbox
+                      label="Meublé ou semi-meublé"
+                      checked={!!draft.meuble}
+                      onChange={(e) => set({ meuble: e.target.checked || undefined })}
+                    />
+                  </>
+                )}
                 <Checkbox
                   label="Stationnement"
                   checked={!!draft.stationnement}
@@ -203,19 +260,21 @@ export function AdvancedFilters({
               </p>
             </section>
 
-            <section className={styles.section}>
-              <h3 className={styles.heading}>Services inclus</h3>
-              <div className={styles.checks}>
-                {SERVICES.map((s) => (
-                  <Checkbox
-                    key={s.key}
-                    label={s.label}
-                    checked={!!draft.services?.includes(s.key)}
-                    onChange={(e) => set({ services: toggle(draft.services, s.key, e.target.checked) })}
-                  />
-                ))}
-              </div>
-            </section>
+            {!sale && (
+              <section className={styles.section}>
+                <h3 className={styles.heading}>Services inclus</h3>
+                <div className={styles.checks}>
+                  {SERVICES.map((s) => (
+                    <Checkbox
+                      key={s.key}
+                      label={s.label}
+                      checked={!!draft.services?.includes(s.key)}
+                      onChange={(e) => set({ services: toggle(draft.services, s.key, e.target.checked) })}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className={styles.section}>
               <h3 className={styles.heading}>Commodités</h3>
