@@ -1,8 +1,10 @@
 import os
 import random
+import sys
 import time
 from contextlib import contextmanager
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
 USER_AGENTS = [
@@ -51,6 +53,32 @@ def new_context(*, headless: bool = True, locale: str = "fr-CA"):
         finally:
             context.close()
             browser.close()
+
+
+def goto_with_retry(
+    page,
+    url: str,
+    *,
+    source: str,
+    retries: int | None = None,
+    backoff_s: tuple[float, ...] = (15, 45, 90),
+    timeout: float = 30000,
+    wait_until: str = "domcontentloaded",
+):
+    """page.goto that retries a timeout / network error (SCRAPER_BROWSER_NAV_RETRIES, default 2)
+    with backoff, then re-raises the last error so the caller can skip that page."""
+    retries = int(os.getenv("SCRAPER_BROWSER_NAV_RETRIES", 2)) if retries is None else retries
+    for attempt in range(retries + 1):
+        try:
+            return page.goto(url, wait_until=wait_until, timeout=timeout)
+        except PlaywrightError as e:
+            if attempt == retries:
+                raise
+            pause = backoff_s[min(attempt, len(backoff_s) - 1)]
+            reason = str(e).splitlines()[0] if str(e) else type(e).__name__
+            print(f"[{source}] {reason} ({attempt + 1}/{retries + 1}), retrying in {pause:g}s", file=sys.stderr)
+            time.sleep(pause)
+    raise AssertionError("unreachable")
 
 
 def polite_delay(min_s: float | None = None, max_s: float | None = None) -> None:

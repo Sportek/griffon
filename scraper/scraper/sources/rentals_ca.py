@@ -10,10 +10,12 @@ their own price/beds/baths/size in a "Floor Plans" table.
 import re
 from collections.abc import Iterator
 
-from ..browser import new_context, polite_delay
+from playwright.sync_api import Error as PlaywrightError
+
+from ..browser import goto_with_retry, new_context, polite_delay
 from ..models import Listing
 from ..normalize import iso_date
-from ..polite import BlockBreaker, browser_status
+from ..polite import BlockBreaker, CrawlHealth, browser_status
 
 BASE = "https://rentals.ca"
 DEFAULT_CITIES = [
@@ -150,6 +152,7 @@ def scrape(
 ) -> Iterator[Listing]:
     cities = cities or DEFAULT_CITIES
     breaker = BlockBreaker("rentals_ca")
+    health = CrawlHealth("rentals_ca")
     with new_context(headless=headless) as ctx:
         list_page = ctx.new_page()
 
@@ -157,10 +160,17 @@ def scrape(
             buildings: list[tuple[str, str, str]] = []
             for p in range(1, max_pages_per_city + 1):
                 url = f"{BASE}/{city}" + (f"?p={p}" if p > 1 else "")
-                resp = list_page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                try:
+                    resp = goto_with_retry(list_page, url, source="rentals_ca")
+                except PlaywrightError as e:
+                    # Skip this page (its buildings are lost for this run), not the whole run.
+                    health.failed("search page", url, e)
+                    polite_delay()
+                    continue
                 breaker.record(browser_status(resp))
                 if not resp or resp.status == 404:
                     break
+                health.ok("search page")
                 list_page.wait_for_timeout(2000)
                 found = _collect_building_links(list_page)
                 if not found:
@@ -176,7 +186,7 @@ def scrape(
 
                 detail_page = ctx.new_page()
                 try:
-                    breaker.record(browser_status(detail_page.goto(href, wait_until="domcontentloaded", timeout=30000)))
+                    breaker.record(browser_status(goto_with_retry(detail_page, href, source="rentals_ca")))
                     detail_page.wait_for_timeout(2000)
                     html = detail_page.content()
                     lat, lng = _extract_latlng(html)
@@ -192,8 +202,11 @@ def scrape(
                     units = _extract_units(detail_page)
                     amenities = _extract_amenities(detail_page)
                     utilities = _extract_utilities(detail_page)
-                except Exception:
+                except Exception as e:  # noqa: BLE001 -- counted; SourceBlocked is not an Exception
+                    health.failed("detail", href, e)
                     units, amenities, utilities = [], [], []
+                else:
+                    health.ok("detail")
                 finally:
                     detail_page.close()
                 polite_delay()
@@ -233,3 +246,4 @@ def scrape(
                         utilities_included=utilities,
                         photos=photos,
                     )
+    health.finish()
