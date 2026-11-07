@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 from .api_sink import ApiError, ApiSink
 from .geo.config import ProximityConfig
 from .geo.enrich import Enricher
-from .main import SOURCES
+from .main import NEVER_MARK_UNSEEN, SOURCES
 from .polite import SourceBlocked
 
 log = sys.stderr
@@ -70,7 +70,8 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
     beat.start()
     seen = 0
     try:
-        with sink.attach(run["id"], source=source, mark_unseen_inactive=bool(params.get("markUnseenInactive"))):
+        mark_unseen = bool(params.get("markUnseenInactive")) and source not in NEVER_MARK_UNSEEN
+        with sink.attach(run["id"], source=source, mark_unseen_inactive=mark_unseen):
             if source not in SOURCES:
                 raise ValueError(f"unknown source {source!r}; this worker knows {', '.join(SOURCES)}")
             for listing in SOURCES[source](args):
