@@ -22,13 +22,27 @@ services:
       SCRAPER_BLOCK_THRESHOLD: ${SCRAPER_BLOCK_THRESHOLD:-3}
       SCRAPER_BROWSER_MIN_DELAY: ${SCRAPER_BROWSER_MIN_DELAY:-3.0}
       SCRAPER_BROWSER_MAX_DELAY: ${SCRAPER_BROWSER_MAX_DELAY:-7.0}
+      # Facebook groups source (README, "Source Facebook"). The session file lives in the
+      # facebook-data volume; FACEBOOK_STORAGE_STATE_B64 can seed it from the Environment tab.
+      FACEBOOK_GROUPS: ${FACEBOOK_GROUPS:-https://www.facebook.com/groups/242242325809377,https://www.facebook.com/groups/232947036803405,https://www.facebook.com/groups/logementpmr.annonces}
+      FACEBOOK_STORAGE_STATE: /data/facebook/storage_state.json
+      FACEBOOK_STORAGE_STATE_B64: ${FACEBOOK_STORAGE_STATE_B64:-}
+      FACEBOOK_MAX_POSTS_PER_GROUP: ${FACEBOOK_MAX_POSTS_PER_GROUP:-60}
+      FACEBOOK_MAX_SCROLLS: ${FACEBOOK_MAX_SCROLLS:-25}
+      FACEBOOK_MAX_AGE_DAYS: ${FACEBOOK_MAX_AGE_DAYS:-14}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash-lite}
+      FACEBOOK_LLM_TOKEN_BUDGET: ${FACEBOOK_LLM_TOKEN_BUDGET:-150000}
     # The API fails a run after its running-timeout without a heartbeat; give the
     # worker time to finish the current run as FAILED on shutdown.
     stop_grace_period: 30s
     volumes:
       - geo-cache:/app/.cache
+      # Facebook session (storage_state.json) + seen posts / LLM cache (cache.json).
+      - facebook-data:/data/facebook
     # Chromium needs a bigger /dev/shm than Docker's 64 MB default.
     shm_size: 1gb
 
 volumes:
   geo-cache:
+  facebook-data:

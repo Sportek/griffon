@@ -9,7 +9,7 @@ from .geo.config import DEFAULT_CATEGORIES, POI_CATEGORIES, PREFETCH_AREAS, Prox
 from .geo.enrich import Enricher
 from .polite import IncompleteCrawl, SourceBlocked
 from .sinks import JsonlSink, StdoutSink
-from .sources import centris, duproprio, kijiji, logis_quebec, realtor_ca, rentals_ca
+from .sources import centris, duproprio, facebook, kijiji, logis_quebec, realtor_ca, rentals_ca
 
 
 def _csv(value: str | None) -> list[str] | None:
@@ -44,11 +44,21 @@ SOURCES = {
         headless=not args.headed,
         max_tiles=args.max_pages or 400,
     ),
+    # Needs a logged-in session (python -m scraper.facebook_login), so only run explicitly.
+    # --areas: group URLs/ids (default $FACEBOOK_GROUPS); --max-pages: scrolls per group.
+    "facebook": lambda args: facebook.scrape(
+        groups=_csv(args.areas),
+        headless=not args.headed,
+        max_scrolls=args.max_pages,
+    ),
 }
 
 # logis_quebec: the whole site has been behind an interactive Cloudflare challenge since
 # 31 Oct 2026 (see sources/logis_quebec.py); it stops at the first request until that changes.
-DISABLED_FROM_ALL = {"realtor_ca", "logis_quebec"}
+DISABLED_FROM_ALL = {"realtor_ca", "logis_quebec", "facebook"}
+# Sources whose crawl can't tell a removed listing from one it didn't scroll to: they
+# expire through the API's inactivity sweep instead (listings.inactivity.stale-after-by-source).
+NEVER_MARK_UNSEEN = {"facebook"}
 
 
 def main() -> None:
@@ -67,9 +77,9 @@ def main() -> None:
         default=None,
         help="comma-separated areas; meaning depends on the source "
         "(centris: montreal,laval; logis_quebec: ile-de-montreal; kijiji: montreal or slug:locationId; "
-        "rentals_ca: montreal,laval; realtor_ca: montreal,laval)",
+        "rentals_ca: montreal,laval; realtor_ca: montreal,laval; facebook: group URLs or ids)",
     )
-    parser.add_argument("--headed", action="store_true", help="show the browser (rentals_ca, realtor_ca)")
+    parser.add_argument("--headed", action="store_true", help="show the browser (rentals_ca, realtor_ca, facebook)")
     parser.add_argument("--no-details", action="store_true", help="kijiji: skip detail pages (truncated descriptions)")
     parser.add_argument("--limit", type=int, default=None, help="stop each source after N listings")
     parser.add_argument(
@@ -146,7 +156,7 @@ def main() -> None:
         seen = 0
         # With the API, each source is journaled as an ingestion run (FAILED if it raises).
         run = (
-            sink.run(name, mark_unseen_inactive=args.mark_unseen_inactive)
+            sink.run(name, mark_unseen_inactive=args.mark_unseen_inactive and name not in NEVER_MARK_UNSEEN)
             if isinstance(sink, ApiSink)
             else nullcontext()
         )

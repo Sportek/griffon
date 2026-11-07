@@ -8,7 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt "playwright==1.64.1"
 COPY scraper scraper
 
 # Geocoding / POI cache (.cache/geo.sqlite) lives in a volume so enrichment stays cheap.
-RUN mkdir -p /app/.cache && chown -R pwuser /app
+# /data/facebook: Facebook session + cache volume (created here so the volume belongs to pwuser).
+RUN mkdir -p /app/.cache /data/facebook && chown -R pwuser /app /data/facebook
 USER pwuser
 ENV PYTHONUNBUFFERED=1
 

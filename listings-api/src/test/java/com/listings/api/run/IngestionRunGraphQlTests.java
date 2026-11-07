@@ -40,6 +40,18 @@ class IngestionRunGraphQlTests extends IntegrationTest {
 	}
 
 	@Test
+	void facebookPostsExpireAfterAMonthInsteadOfThreeDays() {
+		upsert(listing("facebook", "post1", "Montréal", 1450.0), duproprio("d1", "Laval", 900.0));
+		clock.advance(Duration.ofDays(10));
+		graphQl.document("mutation { sweepInactiveListings }").execute();
+		assertThat(facebookActive("post1")).isTrue();
+
+		clock.advance(Duration.ofDays(21));
+		graphQl.document("mutation { sweepInactiveListings }").execute();
+		assertThat(facebookActive("post1")).isFalse();
+	}
+
+	@Test
 	void runCountsBatchesAndDeactivatesWhatItDidNotSee() {
 		upsert(duproprio("gone", "Laval", 900.0), duproprio("stays", "Laval", 900.0));
 		clock.advance(Duration.ofHours(1));
@@ -121,6 +133,15 @@ class IngestionRunGraphQlTests extends IntegrationTest {
 		return graphQl.document("query($id: String!) { listingByKey(source: \"duproprio\", externalId: $id) { active inactiveSince } }")
 			.variable("id", externalId)
 			.execute();
+	}
+
+	private boolean facebookActive(String externalId) {
+		return graphQl.document("query($id: String!) { listingByKey(source: \"facebook\", externalId: $id) { active } }")
+			.variable("id", externalId)
+			.execute()
+			.path("listingByKey.active")
+			.entity(Boolean.class)
+			.get();
 	}
 
 }

@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 .cache/
 .env.worker
+# Facebook session (python -m scraper.facebook_login): it is the account, never commit it.
+facebook_state*.json

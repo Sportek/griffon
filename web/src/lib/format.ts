@@ -7,6 +7,7 @@ export const SOURCE_NAMES: Record<string, string> = {
   logis_quebec: "Logis Québec",
   rentals_ca: "rentals.ca",
   realtor_ca: "realtor.ca",
+  facebook: "Facebook",
 };
 
 export function sourceName(source: string): string {
