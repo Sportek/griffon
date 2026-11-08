@@ -46,7 +46,9 @@ public record ListingFilter(
 		Integer maxYearBuilt,
 		Double minLotAreaSqft,
 		Double maxCondoFeesMonthly,
-		Integer minUnits) {
+		Integer minUnits,
+		/** Griffon's filter language (see ListingQuery), ANDed with the other criteria. */
+		String query) {
 
 	/** This filter restricted to one listing type (the other criteria unchanged). */
 	public ListingFilter withListingType(ListingType type) {
@@ -55,7 +57,7 @@ public record ListingFilter(
 				minYearBuilt, minParkingSpots, furnished, petsAllowed, smokingAllowed, amenities, utilitiesIncluded,
 				hasPhotos, text, firstSeenAfter, firstSeenBefore, lastSeenAfter, active, excludeDuplicates, near, within,
 				maxMetroWalkMinutes, maxRemWalkMinutes, maxTransitWalkMinutes, nearbyCategories, excludeHidden,
-				buildingKeys, maxYearBuilt, minLotAreaSqft, maxCondoFeesMonthly, minUnits);
+				buildingKeys, maxYearBuilt, minLotAreaSqft, maxCondoFeesMonthly, minUnits, query);
 	}
 
 	/**

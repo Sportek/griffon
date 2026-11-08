@@ -1,0 +1,62 @@
+[
+  { "q": "prix <= 1800", "mongo": { "price": { "$lte": 1800.0 } } },
+  { "q": "loyer < 1800$", "mongo": { "price": { "$lt": 1800.0 } } },
+  { "q": "prix <= 1.5k", "mongo": { "price": { "$lte": 1500.0 } } },
+  { "q": "taille >= 4½", "mongo": { "roomsQc": { "$gte": 4.5 } } },
+  { "q": "TAILLE >= 4.5", "mongo": { "roomsQc": { "$gte": 4.5 } } },
+  { "q": "métro <= 10", "mongo": { "metroWalkMinutes": { "$lte": 10.0 } } },
+  { "q": "chambres != 2", "mongo": { "bedrooms": { "$ne": 2.0 } } },
+  { "q": "animaux", "mongo": { "petsAllowed": true } },
+  { "q": "animaux = non", "mongo": { "petsAllowed": false } },
+  { "q": "meublé != oui", "mongo": { "furnished": false } },
+  { "q": "NON meublé", "mongo": { "$nor": [{ "furnished": true }] } },
+  { "q": "not meuble", "mongo": { "$nor": [{ "furnished": true }] } },
+  { "q": "chauffé", "mongo": { "utilityKeys": "chauffage" } },
+  { "q": "photos", "mongo": { "photos.0": { "$exists": true } } },
+  { "q": "stationnement", "mongo": { "parkingSpots": { "$gte": 1 } } },
+  { "q": "quartier = \"Plateau Mont-Royal\"", "mongo": { "neighborhoodKey": "plateau mont royal" } },
+  { "q": "quartier DANS (Rosemont, \"Mile End\")", "mongo": { "neighborhoodKey": { "$in": ["rosemont", "mile end"] } } },
+  { "q": "ville NOT IN (Laval, Longueuil)", "mongo": { "cityKey": { "$nin": ["laval", "longueuil"] } } },
+  { "q": "commodité = balcon", "mongo": { "amenityKeys": "balcon" } },
+  { "q": "source = Kijiji", "mongo": { "source": "kijiji" } },
+  { "q": "prix <= 1800 taille >= 4", "mongo": { "$and": [{ "price": { "$lte": 1800.0 } }, { "roomsQc": { "$gte": 4.0 } }] } },
+  { "q": "prix <= 1800 ET taille >= 4", "mongo": { "$and": [{ "price": { "$lte": 1800.0 } }, { "roomsQc": { "$gte": 4.0 } }] } },
+  {
+    "q": "prix <= 1800 OU taille >= 4 animaux",
+    "mongo": { "$or": [{ "price": { "$lte": 1800.0 } }, { "$and": [{ "roomsQc": { "$gte": 4.0 } }, { "petsAllowed": true }] }] }
+  },
+  {
+    "q": "(quartier = Plateau ET prix <= 1800) OR (quartier = Rosemont AND prix <= 1600)",
+    "mongo": {
+      "$or": [
+        { "$and": [{ "neighborhoodKey": "plateau" }, { "price": { "$lte": 1800.0 } }] },
+        { "$and": [{ "neighborhoodKey": "rosemont" }, { "price": { "$lte": 1600.0 } }] }
+      ]
+    }
+  },
+  { "q": "NON (animaux OU meublé)", "mongo": { "$nor": [{ "$or": [{ "petsAllowed": true }, { "furnished": true }] }] } },
+  { "q": "age < 3j", "ok": true },
+  { "q": "age >= 24h", "ok": true },
+  { "q": "texte ~ terrasse", "ok": true },
+  { "q": "adresse ~ 'Saint-Denis'", "ok": true },
+  { "q": "quartier ~ plateau", "ok": true },
+  { "q": "commodité !~ sous-sol", "ok": true },
+  { "q": "", "mongo": {} },
+
+  { "q": "prix <= abc", "error": "nombre", "start": 8, "end": 11 },
+  { "q": "prix", "error": "attend une comparaison", "start": 0, "end": 4 },
+  { "q": "quartie = Plateau", "error": "quartier", "start": 0, "end": 7 },
+  { "q": "zzzz = 3", "error": "Champ inconnu", "start": 0, "end": 4 },
+  { "q": "(prix <= 1800", "error": "jamais refermée", "start": 0, "end": 1 },
+  { "q": "prix <= 1800)", "error": "en trop", "start": 12, "end": 13 },
+  { "q": "prix <=", "error": "valeur est attendue", "start": 5, "end": 7 },
+  { "q": "prix <= 1800 ET", "error": "critère est attendu", "start": 13, "end": 15 },
+  { "q": "animaux = peut-être", "error": "oui ou non", "start": 8, "end": 19 },
+  { "q": "texte = terrasse", "error": "~", "start": 6, "end": 7 },
+  { "q": "prix ~ 1800", "error": "~", "start": 5, "end": 6 },
+  { "q": "prix DANS (1, 2)", "error": "DANS", "start": 0, "end": 4 },
+  { "q": "quartier DANS Plateau", "error": "liste", "start": 9, "end": 13 },
+  { "q": "quartier = \"Plateau", "error": "jamais refermé", "start": 11, "end": 19 },
+  { "q": "age = 3j", "error": "age", "start": 4, "end": 5 },
+  { "q": "prix ! 3", "error": "!=", "start": 5, "end": 6 }
+]

@@ -305,6 +305,9 @@ Le bloc de statut monday : couleur pleine, libellé centré en 500, 4px de rayon
 ### Signals
 Pastilles de 20px, 12px en 600, texte blanc, 4px de rayon, écart 4px : « Nouveau », « −montant », « Retirée ». Une annonce retirée n'affiche que « Retirée ».
 
+### Query Bar
+L'éditeur du langage de filtre, ouvert par le bouton « Requête » (icône code) de la barre de filtres : une rangée sous la barre, fond surface, filet `layout-border` en bas. Champ de 32px (bordure `ui-border`, 4px, focus `primary`, invalide `negative`) en Figtree 14px. Le texte est coloré par rôle : champ en `primary` 600, mot-clé (ET, OU, NON, DANS) en 700, opérateur et parenthèses en `text-secondary`, valeur en `--query-value` (violet `#7a2fb5` en clair, `#c89bf0` en sombre, 4,5:1 sur les deux surfaces) ; l'erreur est soulignée d'une vague `negative`, sauf sur le mot en cours de frappe. Les suggestions s'ouvrent sous le curseur (menu surface, bordure `layout-border`, 8px, ombre moyenne, option active en `primary-selected`). Sous le champ, une ligne d'état en 13px (valide avec coche `positive`, erreur en `negative`) et une aide repliable en trois colonnes (exemples cliquables, syntaxe, champs).
+
 ### Map Pins
 Épingles de prix dessinées par MapLibre (couche de symboles sur image étirable, pas de DOM) : gélule de 24px de haut, prix abrégé (« 1,7 k$ ») en Noto Sans Bold. Par défaut fond surface, contour `ui-border` (en sombre : `dark-frame` / `dark-ui-border`), texte encre ; nouvelle annonce en `signal-new` plein, texte blanc ; annonce survolée en `primary` plein. Les grappes sont des cercles `primary` à 92 % d'opacité, contour surface de 2px, rayon croissant avec le nombre (16 → 32px), compte blanc. Les stations sont des points couleur de ligne (3 → 6px selon le zoom), contour surface, plus épais aux correspondances, nom en 11px avec halo surface. Les icônes de contrôle MapLibre sont inversées en thème sombre.
 

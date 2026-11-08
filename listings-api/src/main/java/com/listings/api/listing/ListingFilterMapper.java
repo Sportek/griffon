@@ -1,5 +1,6 @@
 package com.listings.api.listing;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -113,6 +114,13 @@ public final class ListingFilterMapper {
 				throw new IllegalArgumentException("near and within cannot be combined");
 			}
 			query.append("location", new Document("$geoWithin", new Document("$geometry", polygon(filter.within()))));
+		}
+
+		if (filter.query() != null && !filter.query().isBlank()) {
+			Document expression = ListingQuery.toMongo(filter.query(), Instant.now());
+			if (!expression.isEmpty()) {
+				query.append("$and", List.of(expression));
+			}
 		}
 
 		return query;

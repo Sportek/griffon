@@ -396,6 +396,12 @@ input ListingFilter {
     excludeHidden: Boolean
     "Seulement ces immeubles (voir Listing.buildingKey)."
     buildingKeys: [String!]
+    """
+    Requête dans le langage de filtre de Griffon, combinée par ET aux autres critères. Ex. :
+    (quartier = "Plateau Mont-Royal" ET prix <= 1800) OU (quartier = Rosemont ET prix <= 1600) taille >= 4½ NON meublé
+    Une requête illisible répond BAD_REQUEST avec le message et sa position.
+    """
+    query: String
 }
 
 input BoundingBox {
@@ -637,6 +643,7 @@ type SavedFilter {
     nearbyCategories: [String!]
     excludeHidden: Boolean
     buildingKeys: [String!]
+    query: String
 }
 
 type SavedBoundingBox {

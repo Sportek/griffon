@@ -27,6 +27,7 @@ function describe(filter: ListingFilter): string {
     filter.petsAllowed ? "animaux acceptés" : null,
     filter.utilitiesIncluded?.includes("chauffage") ? "chauffé" : null,
     filter.text ? `« ${filter.text} »` : null,
+    filter.query ? `requête ${filter.query}` : null,
     filter.within ? "zone de carte" : null,
     filter.maxCondoFeesMonthly ? `copropriété ≤ ${formatPrice(filter.maxCondoFeesMonthly)}/mois` : null,
     filter.minUnits ? `${filter.minUnits} logements et +` : null,

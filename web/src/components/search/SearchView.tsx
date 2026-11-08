@@ -15,6 +15,7 @@ import { BuildingCard } from "../BuildingCard";
 import { ListingCard } from "../ListingCard";
 import { useToast } from "../ToastProvider";
 import { FilterBar } from "./FilterBar";
+import { QueryBar } from "./QueryBar";
 import styles from "./SearchView.module.css";
 
 const ListingsMap = dynamic(() => import("../map/ListingsMap").then((m) => m.ListingsMap), {
@@ -154,6 +155,7 @@ export function SearchView({
   const [preview, setPreview] = useState<ListingGroup | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
+  const [queryOpen, setQueryOpen] = useState(!!state.requete);
   const listRef = useRef<HTMLDivElement>(null);
   const lastVisit = useLastVisit();
   const isDesktop = useDesktop();
@@ -264,7 +266,18 @@ export function SearchView({
         onChange={change}
         onOpenAdvanced={() => setAdvancedOpen(true)}
         onSaveAlert={() => setAlertOpen(true)}
+        queryOpen={queryOpen || !!state.requete}
+        onToggleQuery={() => setQueryOpen((open) => !(open || !!state.requete))}
       />
+      {(queryOpen || state.requete) && (
+        <QueryBar
+          value={state.requete}
+          sale={isSale(state)}
+          options={options}
+          onApply={(requete) => change({ requete })}
+          onClose={() => setQueryOpen(false)}
+        />
+      )}
 
       <div className={styles.split}>
         <section className={styles.listPane} ref={listRef} aria-labelledby="results-heading" aria-busy={pending}>
