@@ -64,7 +64,8 @@ def _env_int(name: str, default: int) -> int:
 
 @dataclass
 class Caps:
-    """Per-group limits of one run (env defaults; maxPages of a run overrides max_scrolls)."""
+    """Per-group limits of one run (env defaults; maxPages of a run overrides max_scrolls and
+    raises max_posts to match)."""
 
     max_posts: int = field(default_factory=lambda: _env_int("FACEBOOK_MAX_POSTS_PER_GROUP", 60))
     max_scrolls: int = field(default_factory=lambda: _env_int("FACEBOOK_MAX_SCROLLS", 25))
@@ -270,7 +271,9 @@ def scrape(
         raise ValueError("facebook: no group configured (FACEBOOK_GROUPS)")
     caps = Caps()
     if max_scrolls:
+        # A run asking for more scrolls (maxPages, e.g. a catch-up) is not cut by the posts cap.
         caps.max_scrolls = max_scrolls
+        caps.max_posts = max(caps.max_posts, max_scrolls)
     store = Store(_cache_path())
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:

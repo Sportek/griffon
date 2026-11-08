@@ -96,3 +96,17 @@ def test_reposts_share_a_hash():
     assert text_hash("4½ à louer, Plateau!! 1450$ / mois") == text_hash("4½ a louer plateau 1450$ / MOIS")
     assert text_hash(a) != text_hash("3½ à louer, Verdun, 1100$")
     assert isinstance(text_hash(b), str)
+
+
+def test_lease_handed_over_by_someone_joining_a_coloc_is_kept():
+    text = ("STUDIO À CÉDER | 1 195 $ / MOIS. Je cherche quelqu'un pour reprendre mon bail, "
+            "car je rejoins une colocation !")
+    assert prefilter(text)
+
+
+@pytest.mark.parametrize("text", [
+    "Très beau 3-1/2 récemment rénové et propre situé au cœur du Plateau",
+    "Mon 4 ½ se libère le 1er décembre sur le plateau !",
+])
+def test_more_rent_wordings_are_kept(text):
+    assert prefilter(text)

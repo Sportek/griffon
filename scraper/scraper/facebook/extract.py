@@ -185,7 +185,7 @@ def parse_timestamp(text: str | None, now: datetime | None = None) -> str | None
 
 # --- posts ------------------------------------------------------------------------
 
-SEE_MORE_LABELS = {"see more", "voir plus", "afficher la suite", "afficher plus"}
+SEE_MORE_LABELS = {"see more", "voir plus", "en voir plus", "afficher la suite", "afficher plus"}
 
 
 @dataclass
@@ -275,10 +275,20 @@ def _post_photos(article: Node) -> list[str]:
     return photos
 
 
+def _post_root(tree: HTMLParser) -> Node | None:
+    """The post itself: a feed unit ([aria-posinset], Facebook's current markup, where only the
+    comments are role="article"), else a top-level article (older markup)."""
+    return tree.css_first("[aria-posinset]") or tree.css_first('[role="article"]') or tree.body
+
+
 def parse_article(html: str, *, group: str | None = None, now: datetime | None = None) -> Post | None:
-    """One top-level article's outer HTML -> Post, or None when it has no recognizable id or text."""
+    """One feed post's outer HTML -> Post, or None when it has no recognizable id or text.
+
+    The post id comes from the post's own permalink, else from its photo set (set=pcb.<id>),
+    else from the links of its comments (/posts/<id>/?comment_id=...), which point at the post.
+    The current markup only fills the timestamp link on hover, hence the fallbacks."""
     tree = HTMLParser(html)
-    article = tree.css_first('[role="article"]') or tree.body
+    article = _post_root(tree)
     if article is None:
         return None
 
@@ -296,6 +306,12 @@ def parse_article(html: str, *, group: str | None = None, now: datetime | None =
         for a in _own(article, "a[href]"):
             if m := _PHOTO_SET_RE.search(urlsplit(unquote(a.attributes.get("href") or "")).query):
                 post_id = m.group(1)
+                break
+    if post_id is None:
+        for a in article.css("a[href]"):  # comments included: their links name the post
+            href = a.attributes.get("href") or ""
+            if "comment_id=" in href and (found := parse_permalink(href))[1]:
+                post_group, post_id = found
                 break
     if published is None and (abbr := next(iter(_own(article, "abbr[data-utime]")), None)):
         try:
@@ -322,9 +338,13 @@ def parse_article(html: str, *, group: str | None = None, now: datetime | None =
 
 
 def split_articles(page_html: str) -> list[str]:
-    """Python twin of FEED_ARTICLES_JS: outer HTML of the top-level articles of a saved page."""
+    """Python twin of FEED_ARTICLES_JS: outer HTML of the posts of a saved page, i.e. the feed
+    units ([aria-posinset]) when there are any, else the top-level articles (older markup)."""
     tree = HTMLParser(page_html)
     scope = tree.css_first('[role="feed"]') or tree.root
+    units = scope.css("[aria-posinset]")
+    if units:
+        return [u.html for u in units if u.css_first("a[href]") is not None]
     out = []
     for node in scope.css('[role="article"]'):
         parent, nested = node.parent, False
@@ -341,8 +361,13 @@ def split_articles(page_html: str) -> list[str]:
 # --- browser side -----------------------------------------------------------------
 
 # Outer HTML of the feed's top-level posts (comments are nested articles).
+# Posts of the feed: [aria-posinset] units (current markup, comments are the only role="article"),
+# else top-level articles (older markup). Python twin: split_articles.
 FEED_ARTICLES_JS = """() => {
   const scope = document.querySelector('[role="feed"]') || document;
+  const units = [...scope.querySelectorAll('[aria-posinset]')];
+  // Loading placeholders have no link yet.
+  if (units.length) return units.filter(u => u.querySelector('a[href]')).map(u => u.outerHTML);
   return [...scope.querySelectorAll('[role="article"]')]
     .filter(a => !a.parentElement || !a.parentElement.closest('[role="article"]'))
     .map(a => a.outerHTML);
@@ -352,9 +377,14 @@ FEED_ARTICLES_JS = """() => {
 SEE_MORE_JS = """(labels) => {
   const scope = document.querySelector('[role="feed"]') || document;
   let n = 0;
-  for (const b of scope.querySelectorAll('[role="article"] [role="button"]')) {
+  const units = scope.querySelector('[aria-posinset]') !== null;
+  const posts = units ? '[aria-posinset] [role="button"]' : '[role="article"] [role="button"]';
+  for (const b of scope.querySelectorAll(posts)) {
     const article = b.closest('[role="article"]');
-    if (article.parentElement && article.parentElement.closest('[role="article"]')) continue;
+    // A comment's button: inside an article that is not the post itself.
+    const comment = units ? (article !== null && article !== b.closest('[aria-posinset]'))
+                          : (article.parentElement && article.parentElement.closest('[role="article"]'));
+    if (comment) continue;
     if (b.dataset.griffonSeen) continue;
     if (labels.includes((b.innerText || '').trim().toLowerCase())) {
       b.dataset.griffonSeen = '1';

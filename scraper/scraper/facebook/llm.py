@@ -216,7 +216,8 @@ class Classifier:
 
     def _request(self, texts: list[str]) -> str | None:
         user = self._user_message(texts)
-        max_tokens = 60 + 110 * len(texts)
+        # Generous: some models pretty-print the JSON, and a cut answer costs a retry and a split.
+        max_tokens = 100 + 250 * len(texts)
         estimate = (len(self._system) + len(user)) // 3 + max_tokens
         if self.tokens_used + estimate > self.token_budget:
             raise LlmStopped(f"token budget {self.token_budget} reached ({self.tokens_used} used)")

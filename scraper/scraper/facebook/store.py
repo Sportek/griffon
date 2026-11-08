@@ -1,6 +1,7 @@
 """Small JSON state kept on the worker volume (FACEBOOK_CACHE, next to the session file).
 
-    {"seen":   {"<group>": {"<post id>": "<first seen ISO>"}},   # where to stop scrolling
+    {"version": 2,                                              # see VERSION
+     "seen":   {"<group>": {"<post id>": "<first seen ISO>"}},   # where to stop scrolling
      "hashes": {"<text hash>": "<post id>"},                     # reposts across groups
      "llm":    {"<text hash>": {...classification...}}}          # never classify twice
 
@@ -27,15 +28,23 @@ def atomic_write_json(path: Path, data) -> None:
         raise
 
 
+# Bumped when the extraction changes what a post id or a post text is: "seen" and "hashes" of
+# an older version are dropped (they could stop the scroll at posts never really read), the LLM
+# answers, keyed by text, are kept. 2: posts read from the [aria-posinset] feed units; version 1
+# read the comments' articles instead.
+VERSION = 2
+
+
 class Store:
     def __init__(self, path: str | Path | None, *, keep_days: int = 90):
         self.path = Path(path) if path else None
         self.keep_days = keep_days
-        self.data: dict = {"seen": {}, "hashes": {}, "llm": {}}
+        self.data: dict = {"version": VERSION, "seen": {}, "hashes": {}, "llm": {}}
         if self.path and self.path.exists():
             try:
                 loaded = json.loads(self.path.read_text(encoding="utf-8"))
-                for key in self.data:
+                current = loaded.get("version", 1) == VERSION
+                for key in ("seen", "hashes", "llm") if current else ("llm",):
                     if isinstance(loaded.get(key), dict):
                         self.data[key] = loaded[key]
             except (OSError, ValueError):

@@ -229,3 +229,24 @@ def test_store_prunes_old_entries(tmp_path):
     reloaded = Store(tmp_path / "c.json")
     assert reloaded.seen("g", "new") and not reloaded.seen("g", "old")
     assert reloaded.classification("h") is None
+
+
+def test_cache_of_an_older_extraction_forgets_seen_posts_but_keeps_llm_answers(tmp_path):
+    import json
+
+    from scraper.facebook.store import VERSION, Store
+
+    path = tmp_path / "cache.json"
+    path.write_text(json.dumps({
+        "seen": {"g": {"1": "2026-11-08T00:00:00+00:00"}},
+        "hashes": {"abc": "1"},
+        "llm": {"abc": {"r": {"keep": True}, "at": "2026-11-08T00:00:00+00:00"}},
+    }), encoding="utf-8")
+    store = Store(path)
+    assert not store.seen("g", "1")
+    assert store.data["hashes"] == {}
+    assert store.classification("abc") is not None
+    store.mark_seen("g", "2")
+    store.save()
+    reloaded = Store(path)
+    assert reloaded.data["version"] == VERSION and reloaded.seen("g", "2")

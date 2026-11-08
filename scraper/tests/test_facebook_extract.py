@@ -149,3 +149,37 @@ def test_multi_permalinks(posts):
 
 def test_non_post_units_are_skipped(posts):
     assert posts[4] is None
+
+
+# --- current markup: [aria-posinset] units, comments are the only role="article" -----------
+
+UNITS_FIXTURE = Path(__file__).parent / "fixtures" / "facebook" / "group_feed_units.html"
+
+
+@pytest.fixture(scope="module")
+def unit_posts():
+    units = split_articles(UNITS_FIXTURE.read_text(encoding="utf-8"))
+    assert len(units) == 3  # the loading placeholder is skipped
+    return [parse_article(html, group="242242325809377", now=NOW) for html in units]
+
+
+def test_unit_post_takes_its_id_from_the_photo_set_and_ignores_the_comments(unit_posts):
+    post = unit_posts[0]
+    assert post.post_id == "29825807217026163"
+    assert post.url == "https://www.facebook.com/groups/242242325809377/posts/29825807217026163/"
+    assert post.text.startswith("*2093 Rue De Bordeaux*\n$1899\nSuperbe 4 1/2 meublé")
+    assert "Voir plus" not in post.text
+    assert len(post.photos) == 2
+    for private in ("Jean Untel", "438-555-0000", "Encore disponible", "Marie Tremblay"):
+        assert private not in repr(post)
+
+
+def test_unit_post_without_photo_takes_its_id_from_a_comment_link(unit_posts):
+    post = unit_posts[1]
+    assert (post.post_id, post.group) == ("29824949407111944", "242242325809377")
+    assert post.text.startswith("Sous-location de mon 3½ à Rosemont")
+    assert "Intéressé" not in post.text
+
+
+def test_unit_post_without_any_id_is_skipped(unit_posts):
+    assert unit_posts[2] is None

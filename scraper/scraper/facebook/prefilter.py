@@ -86,8 +86,8 @@ _RENT_SIGNAL = re.compile(
     r"\b(?:a louer|louer|location|loyer|bail|baux|sous[- ]?locations?|sous[- ]?louer|sublets?|sublease|"
     r"subletting|for rent|rent|rental|lease|leasing|disponible|available|libre|"
     r"par mois|mois|month|monthly|mo|appartement|appart|apartment|apt|logement|studio|loft|condo|"
-    r"chauffe|eclaire|heated|hydro|reprise|transfert|cession|demenage|moving)\b"
-    r"|\d\s*(?:1/2|½|et demi)|\d+\s*\$|\$\s*\d+"
+    r"chauffe|eclaire|heated|hydro|reprise|transfert|cession|demenage|moving|se libere|ceder|cede)\b"
+    r"|\d\s*-?\s*(?:1/2|½|et demi)|\d+\s*\$|\$\s*\d+"
 )
 _PRICE_RE = re.compile(r"(?<![\d.])(\d{1,2}[ ,.]?\d{3}|\d{3,4})\s*\$|\$\s*(\d{1,2}[ ,]?\d{3}|\d{3,4})(?![\d])")
 
@@ -134,7 +134,8 @@ def prefilter(text: str | None) -> Verdict:
     if not text or len(text.strip()) < 15:
         return Verdict(False, "empty")
     folded = re.sub(r"\s+", " ", _fold(text))
-    if _match_not_negated(_COLOC, folded):
+    # A lease handed over may mention a coloc ("je rejoins une colocation"): the LLM decides.
+    if _match_not_negated(_COLOC, folded) and not _SUBLET.search(folded):
         return Verdict(False, "coloc")
     if _is_seeking(folded):
         return Verdict(False, "seeking")
