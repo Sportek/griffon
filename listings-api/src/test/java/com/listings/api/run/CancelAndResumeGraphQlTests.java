@@ -128,6 +128,24 @@ class CancelAndResumeGraphQlTests extends IntegrationTest {
 			.hasSize(0);
 	}
 
+	@Test
+	void runsSavedBeforeCancelAndResumeStillLoad() {
+		mongo.getCollection(IngestionRun.COLLECTION)
+			.insertOne(new org.bson.Document("source", "kijiji").append("status", "SUCCEEDED")
+				.append("trigger", "schedule")
+				.append("queuedAt", java.util.Date.from(clock.instant()))
+				.append("batches", 0)
+				.append("received", 0)
+				.append("created", 0)
+				.append("updated", 0)
+				.append("unchanged", 0)
+				.append("rejected", 0)
+				.append("deactivated", 0));
+		GraphQlTester.Response runs = graphQl.document("{ ingestionRuns { source cancelRequested resumeOf } }").execute();
+		runs.path("ingestionRuns[0].cancelRequested").entity(Boolean.class).isEqualTo(false);
+		runs.path("ingestionRuns[0].resumeOf").valueIsNull();
+	}
+
 	private String trigger(String source) {
 		return graphQl.document("mutation($s: String!) { triggerScrape(source: $s) { id } }")
 			.variable("s", source)

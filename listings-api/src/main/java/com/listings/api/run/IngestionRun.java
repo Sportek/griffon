@@ -35,9 +35,14 @@ public record IngestionRun(
 		int rejected,
 		int deactivated,
 		String error,
-		boolean cancelRequested,
+		Boolean cancelRequested,
 		String resumeOf,
 		Instant coverageSince) {
+
+	/** Runs saved before cancelRequested existed have no such field. */
+	public IngestionRun {
+		cancelRequested = Boolean.TRUE.equals(cancelRequested);
+	}
 
 	public static final String COLLECTION = "ingestionRuns";
 
