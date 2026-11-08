@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 
 import type { ListingSummary } from "@/lib/types";
 import {
@@ -21,6 +20,7 @@ import { FavoriteButton } from "./FavoriteButton";
 import { Signals } from "./Signals";
 import { StatusPill } from "./StatusPill";
 import styles from "./ListingCard.module.css";
+import { ListingLink } from "./ListingLink";
 
 function isHeated(listing: ListingSummary) {
   return listing.utilitiesIncluded.some((u) => /heat|chauff/i.test(u));
@@ -100,13 +100,13 @@ export function ListingCard({
           <span className={styles.price}>{formatRent(listing)}</span>
           <Signals listing={listing} seenBefore={seenBefore} />
         </div>
-        <Link href={`/annonces/${listing.id}`} className={styles.title}>
+        <ListingLink id={listing.id} className={styles.title}>
           {facts.length ? facts.join(" · ") : propertyTypeName(listing.propertyType) ?? "Logement"}
           <span className="visually-hidden">
             , {listing.address ?? place}, {formatRent(listing)}
           </span>
           <span className={styles.stretch} aria-hidden />
-        </Link>
+        </ListingLink>
         <p className={styles.place}>{place}</p>
         <p className={styles.details}>
           {sale

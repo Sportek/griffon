@@ -24,11 +24,11 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children, panel }: LayoutProps<"/">) {
   return (
     <html lang="fr-CA" className={figtree.variable} suppressHydrationWarning>
       <body>
-        <AppShell>{children}</AppShell>
+        <AppShell panel={panel}>{children}</AppShell>
       </body>
     </html>
   );

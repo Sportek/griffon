@@ -1,0 +1,281 @@
+import {
+  ago,
+  formatArea,
+  formatAvailability,
+  formatBedrooms,
+  formatDate,
+  formatPrice,
+  formatRent,
+  formatSize,
+  isForSale,
+  propertyTypeName,
+  saleFacts,
+  sourceName,
+} from "@/lib/format";
+import type { ListingDetail, PriceBenchmark } from "@/lib/types";
+import { Description } from "./Description";
+import { Gallery } from "./Gallery";
+import { PriceHistory } from "./PriceHistory";
+import { ProximityPanel } from "./ProximityPanel";
+import { SameBuilding } from "./SameBuilding";
+import { TrackingPanel } from "./TrackingPanel";
+import { ListingActions } from "./ListingActions";
+import { Signals } from "../Signals";
+import styles from "./ListingDetailView.module.css";
+
+function yesNo(value: boolean | null, yes: string, no: string) {
+  return value == null ? null : value ? yes : no;
+}
+
+function benchmarkText(b: PriceBenchmark, sizeLabel: string | null) {
+  const where = b.scope === "NEIGHBORHOOD" ? `de ${b.area}` : `à ${b.area}`;
+  const what = sizeLabel ? `des ${sizeLabel.replace("≈ ", "")}` : "des logements comparables";
+  const delta = Math.abs(b.deltaPercent);
+  if (delta < 2) return `Dans la médiane ${what} ${where}`;
+  return `${delta.toLocaleString("fr-CA", { maximumFractionDigits: 0 })} % ${b.deltaPercent < 0 ? "sous" : "au-dessus de"} la médiane ${what} ${where}`;
+}
+
+/**
+ * Everything about one listing: photos, price, facts, proximity, history, tracking and sources.
+ * Shared by the listing page and the search's side panel; its layout follows its own width
+ * (container queries), so the panel gets the one-column version on any screen.
+ */
+export function ListingDetailView({ listing }: { listing: ListingDetail }) {
+  const sale = isForSale(listing);
+  const size = sale ? null : formatSize(listing);
+  const place = [listing.neighborhood, listing.city].filter(Boolean).join(", ");
+  const proximity = listing.proximity;
+  const parking =
+    listing.parkingSpots != null
+      ? listing.parkingSpots > 0
+        ? `${listing.parkingSpots} place${listing.parkingSpots > 1 ? "s" : ""}`
+        : "Aucun"
+      : null;
+  const money = (n: number | null, suffix = "") => (n != null ? `${formatPrice(n)}${suffix}` : null);
+  // The benchmark compares a property for sale with the same type and bedrooms.
+  const benchmarkSize = sale
+    ? `propriétés comparables (${[propertyTypeName(listing.propertyType)?.toLowerCase(), formatBedrooms(listing.bedrooms)]
+        .filter(Boolean)
+        .join(", ")})`
+    : size;
+
+  const saleFactList: [string, string | null][] = [
+    ["Type", propertyTypeName(listing.propertyType)],
+    ["Chambres", formatBedrooms(listing.bedrooms)],
+    ["Salles de bain", listing.bathrooms != null ? String(listing.bathrooms) : null],
+    ["Superficie", formatArea(listing.areaSqft)],
+    ["Terrain", formatArea(listing.lotAreaSqft)],
+    ["Construction", listing.yearBuilt != null ? String(listing.yearBuilt) : null],
+    ["Stationnement", parking],
+    [
+      listing.municipalAssessmentYear ? `Évaluation municipale (${listing.municipalAssessmentYear})` : "Évaluation municipale",
+      money(listing.municipalAssessment),
+    ],
+    ["Taxes municipales", money(listing.municipalTaxesYearly, "/an")],
+    ["Taxes scolaires", money(listing.schoolTaxesYearly, "/an")],
+    ...(listing.condoFeesMonthly != null || listing.propertyType === "condo"
+      ? ([["Frais de copropriété", money(listing.condoFeesMonthly, "/mois")]] as [string, string | null][])
+      : []),
+    ...(listing.units != null && listing.units > 1
+      ? ([
+          ["Logements", String(listing.units)],
+          ["Revenus bruts", money(listing.grossRevenueYearly, "/an")],
+        ] as [string, string | null][])
+      : []),
+    ["Occupation", formatAvailability(listing.availableDate)],
+  ];
+
+  const rentFacts: [string, string | null][] = [
+    ["Taille", size],
+    ["Chambres", formatBedrooms(listing.bedrooms)],
+    ["Salles de bain", listing.bathrooms != null ? String(listing.bathrooms) : null],
+    ["Superficie", formatArea(listing.areaSqft)],
+    ["Type", propertyTypeName(listing.propertyType)],
+    ["Disponibilité", formatAvailability(listing.availableDate)],
+    ["Bail", listing.leaseTerm],
+    ["Animaux", yesNo(listing.petsAllowed, "Acceptés", "Refusés")],
+    ["Meublé", yesNo(listing.furnished, "Oui", "Non")],
+    ["Fumeur", yesNo(listing.smokingAllowed, "Permis", "Non-fumeur")],
+    ["Stationnement", parking],
+    ["Construction", listing.yearBuilt != null ? String(listing.yearBuilt) : null],
+  ];
+  const facts = sale ? saleFactList : rentFacts;
+
+  const sources = [
+    { id: listing.id, source: listing.source, url: listing.url, price: listing.price, active: listing.active, current: true },
+    ...listing.duplicates.map((d) => ({ ...d, current: false })),
+  ].sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+
+  return (
+    <div className={styles.detail}>
+    <Gallery photos={listing.photos} inactive={!listing.active} />
+
+    <header className={styles.header}>
+      <div className={styles.headline}>
+        <div className={styles.priceRow}>
+          <h1 className={styles.price}>{formatRent(listing)}</h1>
+          <Signals listing={{ ...listing, duplicates: [] }} />
+        </div>
+        <p className={styles.facts}>
+          {(sale
+            ? saleFacts(listing)
+            : [size, formatBedrooms(listing.bedrooms), formatArea(listing.areaSqft), propertyTypeName(listing.propertyType)]
+          )
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        <p className={styles.address}>
+          {[listing.address, place, listing.postalCode].filter(Boolean).join(", ") || "Adresse non précisée"}
+          {listing.unit && !listing.address?.toLowerCase().includes(listing.unit) && ` (app. ${listing.unit})`}
+          {listing.locationPrecision && listing.locationPrecision !== "exact" && (
+            <span className={styles.approx}> · position approximative</span>
+          )}
+        </p>
+      </div>
+      <ListingActions url={listing.url} source={sourceName(listing.source)} active={listing.active} title={listing.title} />
+    </header>
+
+    {!listing.active && (
+      <p className={styles.removed} role="status">
+        Retirée de {sourceName(listing.source)} {ago(listing.inactiveSince ?? listing.lastSeenAt)} : elle n&apos;est
+        probablement plus disponible.
+      </p>
+    )}
+
+    <div className={styles.layout}>
+      <div className={styles.main}>
+        <section className={styles.section} aria-labelledby="facts-heading">
+          <h2 id="facts-heading" className={styles.sectionTitle}>
+            L&apos;essentiel
+          </h2>
+          <dl className={styles.factGrid}>
+            {facts.map(([label, value]) => (
+              <div key={label} className={styles.fact}>
+                <dt>{label}</dt>
+                <dd data-unknown={value == null || undefined}>{value ?? "Non précisé"}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {listing.sameBuilding.length > 0 && (
+          <section className={styles.section} aria-labelledby="building-heading">
+            <h2 id="building-heading" className={styles.sectionTitle}>
+              Dans le même immeuble ({listing.sameBuilding.length} autre{listing.sameBuilding.length > 1 ? "s" : ""})
+            </h2>
+            <SameBuilding listings={listing.sameBuilding} />
+          </section>
+        )}
+
+        <section className={styles.section} aria-labelledby="included-heading">
+          <h2 id="included-heading" className={styles.sectionTitle}>
+            {sale ? "Caractéristiques" : "Inclus et commodités"}
+          </h2>
+          {!sale && (
+            <p className={styles.subtle}>
+              <strong>Inclus dans le loyer : </strong>
+              {listing.utilitiesIncluded.length ? listing.utilitiesIncluded.join(", ") : "non précisé"}
+            </p>
+          )}
+          {listing.amenities.length > 0 ? (
+            <ul className={styles.tags}>
+              {listing.amenities.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.subtle}>Aucune commodité précisée.</p>
+          )}
+        </section>
+
+        <section className={styles.section} aria-labelledby="proximity-heading">
+          <h2 id="proximity-heading" className={styles.sectionTitle}>
+            À proximité
+          </h2>
+          {!proximity ? (
+            <p className={styles.subtle}>La proximité n&apos;a pas encore été calculée pour cette annonce.</p>
+          ) : (
+            <ProximityPanel proximity={proximity} latitude={listing.latitude} longitude={listing.longitude} />
+          )}
+        </section>
+
+        <section className={styles.section} aria-labelledby="history-heading">
+          <h2 id="history-heading" className={styles.sectionTitle}>
+            Historique du prix
+          </h2>
+          <PriceHistory history={listing.priceHistory} lastSeenAt={listing.lastSeenAt} />
+        </section>
+
+        {listing.description && (
+          <section className={styles.section} aria-labelledby="description-heading">
+            <h2 id="description-heading" className={styles.sectionTitle}>
+              Description
+            </h2>
+            <Description text={listing.description} />
+          </section>
+        )}
+      </div>
+
+      <div className={styles.tracking}>
+        <TrackingPanel listingId={listing.id} tracking={listing.tracking} />
+      </div>
+
+      <aside className={styles.aside}>
+        {listing.priceBenchmark && (
+          <section className={styles.card} aria-labelledby="benchmark-heading">
+            <h2 id="benchmark-heading" className={styles.cardTitle}>
+              Repère de prix
+            </h2>
+            <p className={styles.benchmark} data-direction={listing.priceBenchmark.deltaPercent < 0 ? "down" : "up"}>
+              {benchmarkText(listing.priceBenchmark, benchmarkSize)}
+            </p>
+            <p className={styles.subtle}>
+              Médiane {formatPrice(listing.priceBenchmark.median)}, sur {listing.priceBenchmark.sampleSize} annonces
+              actives.
+            </p>
+          </section>
+        )}
+
+        <section className={styles.card} aria-labelledby="sources-heading">
+          <h2 id="sources-heading" className={styles.cardTitle}>
+            {sources.length > 1 ? `Publiée sur ${sources.length} sites` : "Source"}
+          </h2>
+          <ul className={styles.sources}>
+            {sources.map((s) => (
+              <li key={s.id}>
+                <a href={s.url} target="_blank" rel="noopener noreferrer">
+                  {sourceName(s.source)}
+                </a>
+                {!s.active && <span className={styles.subtle}> (retirée)</span>}
+                <span className={styles.sourcePrice}>{formatPrice(s.price)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className={styles.card} aria-labelledby="freshness-heading">
+          <h2 id="freshness-heading" className={styles.cardTitle}>
+            Fraîcheur
+          </h2>
+          <dl className={styles.freshness}>
+            {listing.publishedAt && (
+              <div>
+                <dt>Publiée</dt>
+                <dd>{/^\d{4}-\d{2}-\d{2}/.test(listing.publishedAt) ? formatDate(listing.publishedAt) : listing.publishedAt}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Trouvée par Griffon</dt>
+              <dd>{ago(listing.firstSeenAt)}</dd>
+            </div>
+            <div>
+              <dt>{listing.active ? "Revue en ligne" : "Vue en ligne pour la dernière fois"}</dt>
+              <dd>{ago(listing.lastSeenAt)}</dd>
+            </div>
+          </dl>
+        </section>
+      </aside>
+    </div>
+    </div>
+  );
+}

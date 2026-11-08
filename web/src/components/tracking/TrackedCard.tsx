@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@vibe/core";
 import { Show } from "@vibe/icons";
 
@@ -10,6 +9,7 @@ import type { TrackedListing, TrackingStatus } from "@/lib/types";
 import { FavoriteButton } from "../FavoriteButton";
 import { StatusSelect } from "../StatusSelect";
 import styles from "./TrackedCard.module.css";
+import { ListingLink } from "../ListingLink";
 
 /** What changed on a followed listing since it was saved: removed, or a new price. */
 function changes(item: TrackedListing): string[] {
@@ -47,10 +47,10 @@ export function TrackedCard({
       <div className={styles.body}>
         <div className={styles.top}>
           {listing ? (
-            <Link href={`/annonces/${listing.id}`} className={styles.title}>
+            <ListingLink id={listing.id} className={styles.title}>
               {formatRent(listing)}
               {[isForSale(listing) ? saleFacts(listing)[0] : formatSize(listing)].filter(Boolean).map((s) => ` · ${s}`)}
-            </Link>
+            </ListingLink>
           ) : (
             <span className={styles.title}>Annonce introuvable</span>
           )}
