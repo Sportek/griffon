@@ -21,8 +21,10 @@ import org.springframework.stereotype.Service;
 
 /**
  * Lifecycle of ingestion runs: QUEUED (scheduled or triggered, waiting for a worker) →
- * RUNNING (claimed, or started straight from the CLI) → SUCCEEDED / FAILED. Runs whose
+ * RUNNING (claimed, or started straight from the CLI) → SUCCEEDED / FAILED / CANCELLED. Runs whose
  * worker went silent, or that no worker ever picked up, are failed by {@link #expireStale()}.
+ * A FAILED or CANCELLED worker run can be resumed: a new run with the same params skips what
+ * the interrupted one already sent (see {@link #resume(String)}).
  */
 @Service
 public class IngestionRunService {
@@ -59,7 +61,7 @@ public class IngestionRunService {
 		requireSource(source);
 		Instant now = clock.instant();
 		return mongo.insert(new IngestionRun(null, source, IngestionRunStatus.RUNNING, IngestionRun.TRIGGER_CLI,
-				null, now, now, null, now, null, 0, 0, 0, 0, 0, 0, 0, null));
+				null, now, now, null, now, null, 0, 0, 0, 0, 0, 0, 0, null, false, null, null));
 	}
 
 	/** Queues a run for a worker. Refused while the source already has a queued or running run. */
@@ -71,7 +73,72 @@ public class IngestionRunService {
 			throw new IllegalArgumentException("A run of " + source + " is already queued or running");
 		}
 		return mongo.insert(new IngestionRun(null, source, IngestionRunStatus.QUEUED, trigger, effective,
-				clock.instant(), null, null, null, null, 0, 0, 0, 0, 0, 0, 0, null));
+				clock.instant(), null, null, null, null, 0, 0, 0, 0, 0, 0, 0, null, false, null, null));
+	}
+
+	/**
+	 * Stops a run. A queued run is CANCELLED at once; a running one is flagged, and its worker,
+	 * told by its next heartbeat, stops and finishes it CANCELLED.
+	 */
+	public IngestionRun cancel(String id) {
+		IngestionRun run = find(id);
+		if (run == null) {
+			throw new IllegalArgumentException("Unknown ingestion run: " + id);
+		}
+		Query query = Query.query(Criteria.where("_id").is(id).and("status").is(run.status()));
+		Update update = switch (run.status()) {
+			case QUEUED -> new Update().set("status", IngestionRunStatus.CANCELLED)
+				.set("finishedAt", clock.instant())
+				.set("error", "cancelled before a worker picked it up");
+			case RUNNING -> new Update().set("cancelRequested", true);
+			default -> throw new IllegalArgumentException("Ingestion run " + id + " is already " + run.status());
+		};
+		IngestionRun updated = mongo.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true),
+				IngestionRun.class);
+		if (updated == null) {
+			throw new IllegalArgumentException("Ingestion run " + id + " changed meanwhile, try again");
+		}
+		return updated;
+	}
+
+	/**
+	 * Queues the continuation of a FAILED or CANCELLED worker run: same params, and the
+	 * listings it already sent are skipped (see {@link #alreadySeen(String)}). Counted from
+	 * the interrupted run's start, a complete continuation can still deactivate unseen listings.
+	 */
+	public IngestionRun resume(String id) {
+		IngestionRun previous = find(id);
+		if (previous == null) {
+			throw new IllegalArgumentException("Unknown ingestion run: " + id);
+		}
+		if (previous.status() != IngestionRunStatus.FAILED && previous.status() != IngestionRunStatus.CANCELLED) {
+			throw new IllegalArgumentException(
+					"Only a FAILED or CANCELLED run can be resumed; " + id + " is " + previous.status());
+		}
+		if (previous.params() == null) {
+			throw new IllegalArgumentException("Run " + id + " was started from the CLI, not by a worker: re-run it");
+		}
+		if (hasActiveRun(previous.source())) {
+			throw new IllegalArgumentException("A run of " + previous.source() + " is already queued or running");
+		}
+		return mongo.insert(new IngestionRun(null, previous.source(), IngestionRunStatus.QUEUED,
+				IngestionRun.TRIGGER_RESUME, previous.params(), clock.instant(), null, null, null, null, 0, 0, 0, 0,
+				0, 0, 0, null, false, previous.id(), previous.seenSince()));
+	}
+
+	/**
+	 * External ids a resumed run can skip: its source's listings seen since the interrupted
+	 * scrape started. Empty for a run that resumes nothing.
+	 */
+	public List<String> alreadySeen(String id) {
+		IngestionRun run = find(id);
+		if (run == null) {
+			throw new IllegalArgumentException("Unknown ingestion run: " + id);
+		}
+		if (run.resumeOf() == null || run.coverageSince() == null) {
+			return List.of();
+		}
+		return inactivity.externalIdsSeenSince(run.source(), run.coverageSince());
 	}
 
 	boolean hasActiveRun(String source) {
@@ -102,10 +169,19 @@ public class IngestionRunService {
 				FindAndModifyOptions.options().returnNew(true), IngestionRun.class);
 	}
 
-	/** Keeps a long run alive between batches (e.g. while a source walks its search pages). */
+	/**
+	 * Keeps a long run alive between batches (e.g. while a source walks its search pages).
+	 * False tells the worker to stop: the run was cancelled, or is no longer RUNNING.
+	 */
 	public boolean heartbeat(String id) {
 		return mongo
-			.updateFirst(Query.query(Criteria.where("_id").is(id).and("status").is(IngestionRunStatus.RUNNING)),
+			.updateFirst(
+					Query.query(Criteria.where("_id")
+						.is(id)
+						.and("status")
+						.is(IngestionRunStatus.RUNNING)
+						.and("cancelRequested")
+						.ne(true)),
 					Update.update("lastBatchAt", clock.instant()), IngestionRun.class)
 			.getMatchedCount() > 0;
 	}
@@ -138,14 +214,14 @@ public class IngestionRunService {
 	}
 
 	public IngestionRun finish(String id, IngestionRunStatus status, String error, boolean markUnseenInactive) {
-		if (status != IngestionRunStatus.SUCCEEDED && status != IngestionRunStatus.FAILED) {
-			throw new IllegalArgumentException("A run can only finish as SUCCEEDED or FAILED");
+		if (status == IngestionRunStatus.QUEUED || status == IngestionRunStatus.RUNNING) {
+			throw new IllegalArgumentException("A run can only finish as SUCCEEDED, FAILED or CANCELLED");
 		}
 		IngestionRun run = requireRunning(id);
 		int deactivated = 0;
 		// Only a successful run proves that what it did not see is gone.
 		if (markUnseenInactive && status == IngestionRunStatus.SUCCEEDED) {
-			deactivated = inactivity.markUnseenSince(run.source(), run.startedAt());
+			deactivated = inactivity.markUnseenSince(run.source(), run.seenSince());
 		}
 		Update update = new Update().set("status", status)
 			.set("finishedAt", clock.instant())

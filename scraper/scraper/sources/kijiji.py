@@ -23,7 +23,7 @@ from collections.abc import Iterator
 import httpx
 
 from ..models import Listing
-from ..polite import PoliteClient
+from ..polite import PoliteClient, already_sent
 from ..normalize import find_postal_code, html_to_text, iso_date, parse_qc_rooms
 
 BASE_URL = "https://www.kijiji.ca"
@@ -253,6 +253,8 @@ def scrape(
 
             for row in new_rows:
                 seen.add(str(row["id"]))
+                if already_sent(str(row["id"])):
+                    continue
                 listing_raw, profile = row, None
                 full = False
                 if fetch_details and row.get("url"):

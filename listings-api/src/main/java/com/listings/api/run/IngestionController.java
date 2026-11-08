@@ -53,6 +53,21 @@ class IngestionController {
 	}
 
 	@MutationMapping
+	IngestionRun cancelIngestionRun(@Argument String id) {
+		return runs.cancel(id);
+	}
+
+	@MutationMapping
+	IngestionRun resumeIngestionRun(@Argument String id) {
+		return runs.resume(id);
+	}
+
+	@QueryMapping
+	List<String> ingestionRunAlreadySeen(@Argument String id) {
+		return runs.alreadySeen(id);
+	}
+
+	@MutationMapping
 	int runSchedulerTick() {
 		return scheduler.tick();
 	}

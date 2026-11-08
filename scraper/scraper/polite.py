@@ -23,6 +23,7 @@ Tunable with environment variables (defaults are deliberately gentle):
 import os
 import random
 import sys
+import threading
 import time
 
 import httpx
@@ -40,6 +41,28 @@ def report_progress(source: str, done: int, total: int) -> None:
 
 RETRYABLE = {429, 500, 502, 503, 504}
 BLOCKING = {403, 429}
+
+
+# Control of the run this process executes (the worker runs one at a time), set by the worker:
+# CANCEL when the API asks to stop (cancelIngestionRun), ALREADY_SENT with the external ids a
+# resumed run can skip (resumeIngestionRun) -- sources check it before fetching a detail page.
+CANCEL = threading.Event()
+ALREADY_SENT: set[str] = set()
+
+
+class RunCancelled(BaseException):
+    """The run was cancelled from the API: stop the source now. A BaseException, like
+    SourceBlocked, so the sources' `except Exception` around one page cannot swallow it."""
+
+
+def check_cancelled() -> None:
+    if CANCEL.is_set():
+        raise RunCancelled("cancelled from the API (cancelIngestionRun)")
+
+
+def already_sent(external_id: str) -> bool:
+    """True when the run this one resumes already sent this listing: skip its detail page."""
+    return external_id in ALREADY_SENT
 
 
 class SourceBlocked(BaseException):
@@ -139,6 +162,7 @@ class PoliteClient(httpx.Client):
 
     def send(self, request: httpx.Request, **kwargs) -> httpx.Response:
         for attempt in range(self.max_retries + 1):
+            check_cancelled()
             if self.max_requests and self.requests_sent >= self.max_requests:
                 raise SourceBlocked(f"{self.source}: request budget of {self.max_requests} spent")
             self._wait_turn()

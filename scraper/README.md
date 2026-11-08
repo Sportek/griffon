@@ -125,7 +125,24 @@ Lancer à la main (file d'attente FIFO, un scrape à la fois : les sources s'enc
 python -m scraper.trigger ubee ubee_sale facebook --watch   # paramètres du planning de chaque source
 python -m scraper.trigger centris --max-pages 1             # test rapide, ne désactive jamais rien
 python -m scraper.trigger --status                          # en cours, en attente, derniers runs
+python -m scraper.trigger --cancel centris_sale             # arrête son run (en file ou en cours)
+python -m scraper.trigger --resume centris_sale --watch     # reprend son dernier run arrêté
 ```
+
+**Arrêter** (`cancelIngestionRun`) : un run en file est annulé tout de suite ; un run en cours est
+marqué, le worker l'apprend à son heartbeat suivant (environ une minute), s'arrête et le termine
+`CANCELLED`, sans rien désactiver.
+
+**Reprendre** (`resumeIngestionRun`, pour un run `FAILED` ou `CANCELLED`, par exemple coupé par un
+redéploiement) : un nouveau run avec les mêmes paramètres, qui saute les fiches des annonces déjà
+envoyées depuis le début du run interrompu. Les pages de recherche sont reparcourues (peu de requêtes),
+seules les fiches restantes sont téléchargées. Le saut vaut pour centris, centris_sale, duproprio,
+duproprio_sale, kijiji et logis_quebec ; les autres sources repartent du début (ubee a déjà son propre
+cache, realtor_ca n'a pas de fiche par annonce, rentals_ca charge une page par immeuble, facebook garde ses posts vus). Si la
+reprise va au bout, `markUnseenInactive` compte depuis le début du run interrompu : les annonces vues
+avant l'arrêt ne sont pas désactivées.
+
+`--cancel` et `--resume` prennent aussi des ids de run.
 
 `WORKER_SOURCES` permet de répartir les sources entre plusieurs workers.
 

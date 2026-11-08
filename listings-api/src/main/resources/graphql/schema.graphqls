@@ -36,6 +36,11 @@ type Query {
     ingestionRun(id: ID!): IngestionRun
     "Historique des exécutions du scraper, les plus récentes en premier."
     ingestionRuns(source: String, status: IngestionRunStatus, limit: Int = 20): [IngestionRun!]!
+    """
+    Worker : externalIds qu'une exécution reprise (resumeIngestionRun) peut sauter, c'est-à-dire les annonces
+    de sa source vues depuis le début du scrape interrompu. Vide pour une exécution qui ne reprend rien.
+    """
+    ingestionRunAlreadySeen(id: ID!): [String!]!
     "Plannings de scraping (un par source)."
     scrapeSchedules: [ScrapeSchedule!]!
 
@@ -79,12 +84,26 @@ type Mutation {
     deleteScrapeSchedule(source: String!): Boolean!
     "Met une exécution en file d'attente tout de suite (refusé si la source a déjà une exécution en cours)."
     triggerScrape(source: String!, params: ScrapeParamsInput): IngestionRun!
+    """
+    Arrête une exécution. En file : annulée tout de suite (CANCELLED). En cours : marquée cancelRequested ;
+    le worker l'apprend à son prochain heartbeat (environ une minute), s'arrête et la termine CANCELLED.
+    """
+    cancelIngestionRun(id: ID!): IngestionRun!
+    """
+    Reprend une exécution FAILED ou CANCELLED lancée par un worker : met en file une nouvelle exécution avec les
+    mêmes options, qui saute les annonces déjà envoyées (ingestionRunAlreadySeen). Ses compteurs ne portent que
+    sur ce qu'elle envoie ; markUnseenInactive compte depuis le début de l'exécution reprise.
+    """
+    resumeIngestionRun(id: ID!): IngestionRun!
     "Exécute immédiatement le tour du planificateur (normalement chaque minute). Renvoie le nombre d'exécutions mises en file."
     runSchedulerTick: Int!
 
     "Worker : réclame la plus ancienne exécution en file (optionnellement parmi sources). null s'il n'y a rien à faire."
     claimIngestionRun(worker: String!, sources: [String!]): IngestionRun
-    "Worker : signe de vie pendant une longue exécution (sinon elle est échouée après listings.runs.running-timeout)."
+    """
+    Worker : signe de vie pendant une longue exécution (sinon elle est échouée après listings.runs.running-timeout).
+    false : le worker doit s'arrêter (exécution annulée, ou plus RUNNING).
+    """
     heartbeatIngestionRun(id: ID!): Boolean!
 
     createSavedSearch(input: SavedSearchInput!): SavedSearch!
@@ -504,13 +523,15 @@ enum IngestionRunStatus {
     RUNNING
     SUCCEEDED
     FAILED
+    "Arrêtée par cancelIngestionRun ; reprenable avec resumeIngestionRun."
+    CANCELLED
 }
 
 type IngestionRun {
     id: ID!
     source: String!
     status: IngestionRunStatus!
-    "cli, schedule ou manual."
+    "cli, schedule, manual ou resume."
     trigger: String
     "Options transmises au worker."
     params: ScrapeParams
@@ -530,6 +551,12 @@ type IngestionRun {
     "Listings marqués inactifs à la fin de l'exécution (markUnseenInactive)."
     deactivated: Int!
     error: String
+    "Arrêt demandé (cancelIngestionRun), en attente du worker."
+    cancelRequested: Boolean!
+    "Exécution reprise par celle-ci (resumeIngestionRun)."
+    resumeOf: ID
+    "Début du scrape auquel appartient l'exécution : le sien, ou celui de l'exécution qu'elle reprend."
+    coverageSince: DateTime
 }
 
 """

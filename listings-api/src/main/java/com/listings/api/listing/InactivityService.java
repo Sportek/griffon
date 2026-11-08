@@ -85,6 +85,15 @@ public class InactivityService {
 		return deactivate(RunScope.of(runSource).criteria().append("lastSeenAt", new Document("$lt", since)));
 	}
 
+	/** External ids of the run source's listings seen since {@code since} (what a resumed run can skip). */
+	public List<String> externalIdsSeenSince(String runSource, Instant since) {
+		return mongo.getCollection(Listing.COLLECTION)
+			.find(RunScope.of(runSource).criteria().append("lastSeenAt", new Document("$gte", since)))
+			.projection(new Document("externalId", 1))
+			.map(d -> d.getString("externalId"))
+			.into(new ArrayList<>());
+	}
+
 	private int deactivate(Document criteria) {
 		criteria.append("active", new Document("$ne", false));
 		List<Document> stale = mongo.getCollection(Listing.COLLECTION)

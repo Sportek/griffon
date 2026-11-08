@@ -28,7 +28,7 @@ import httpx
 from selectolax.parser import HTMLParser, Node
 
 from ..models import Listing
-from ..polite import CrawlHealth, IncompleteCrawl, PoliteClient
+from ..polite import CrawlHealth, IncompleteCrawl, PoliteClient, already_sent
 from ..normalize import clean_text, iso_date, parse_int, parse_number, parse_qc_rooms, split_city_neighborhood
 
 BASE_URL = "https://www.centris.ca"
@@ -266,6 +266,8 @@ def scrape(
                     break
                 for external_id, url in new_pairs:
                     seen.add(external_id)
+                    if already_sent(external_id):
+                        continue
                     try:
                         resp = client.get(url)
                         resp.raise_for_status()
@@ -492,6 +494,8 @@ def scrape_sale(
                         if number in seen or cat in _NOT_HOMES:
                             continue
                         seen.add(number)
+                        if already_sent(f"sale-{number}"):
+                            continue
                         try:
                             resp = client.get(url)
                             resp.raise_for_status()

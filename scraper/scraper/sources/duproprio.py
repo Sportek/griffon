@@ -26,7 +26,7 @@ from selectolax.parser import HTMLParser
 
 from ..models import Listing
 from ..normalize import parse_number
-from ..polite import PoliteClient
+from ..polite import PoliteClient, already_sent
 
 BASE_URL = "https://duproprio.com"
 SEARCH_URL = f"{BASE_URL}/en/rental/search/list"
@@ -183,6 +183,8 @@ def scrape(*, max_pages: int = 350, stale_page_limit: int = 5, delay_s: float = 
 
             for external_id, url in new_pairs:
                 seen_ids.add(external_id)
+                if already_sent(external_id):
+                    continue
                 try:
                     detail = _fetch_detail(client, url, external_id)
                     if detail:
@@ -406,7 +408,7 @@ def scrape_sale(
                 break
             for external_id, url, type_slug in fresh:
                 seen_ids.add(external_id)
-                if type_slug in _NOT_HOMES:
+                if type_slug in _NOT_HOMES or already_sent(external_id):
                     continue
                 try:
                     resp = client.get(url)

@@ -25,7 +25,7 @@ from pathlib import Path
 import httpx
 
 from .models import Listing
-from .polite import IncompleteCrawl
+from .polite import IncompleteCrawl, RunCancelled
 
 DEFAULT_URL = "http://localhost:8080/graphql"
 
@@ -53,10 +53,12 @@ mutation($id: ID!, $status: IngestionRunStatus!, $error: String, $markUnseenInac
 CLAIM_RUN_MUTATION = """
 mutation($worker: String!, $sources: [String!]) {
   claimIngestionRun(worker: $worker, sources: $sources) {
-    id source params { maxPages areas limit enrich markUnseenInactive }
+    id source resumeOf params { maxPages areas limit enrich markUnseenInactive }
   }
 }
 """
+
+ALREADY_SEEN_QUERY = "query($id: ID!) { ingestionRunAlreadySeen(id: $id) }"
 
 HEARTBEAT_MUTATION = "mutation($id: ID!) { heartbeatIngestionRun(id: $id) }"
 
@@ -225,7 +227,8 @@ class ApiSink:
     @contextmanager
     def attach(self, run_id: str, *, source: str, mark_unseen_inactive: bool = False) -> Iterator[str]:
         """Sends the writes inside the block to an existing RUNNING run (e.g. one a worker
-        claimed), then finishes it: SUCCEEDED, or FAILED with the exception if the block raises.
+        claimed), then finishes it: SUCCEEDED, or FAILED with the exception if the block raises
+        (CANCELLED for RunCancelled: the run was stopped from the API).
 
         IncompleteCrawl (the source lost too many pages) finishes it SUCCEEDED -- what it sent
         is good -- but never marks unseen listings inactive: they were probably just missed."""
@@ -236,6 +239,9 @@ class ApiSink:
         except IncompleteCrawl as e:
             error = f"incomplete crawl, unseen listings left active: {e}"
             mark_unseen_inactive = False
+            raise
+        except RunCancelled as e:
+            status, error, mark_unseen_inactive = "CANCELLED", str(e), False
             raise
         except BaseException as e:
             status, error = "FAILED", str(e) or repr(e)
@@ -252,7 +258,12 @@ class ApiSink:
         """Takes the oldest queued run for these sources, or None when there is nothing to do."""
         return self._execute(CLAIM_RUN_MUTATION, {"worker": worker, "sources": sources})["claimIngestionRun"]
 
+    def already_seen(self, run_id: str) -> list[str]:
+        """External ids a resumed run can skip (empty unless the run resumes another one)."""
+        return self._execute(ALREADY_SEEN_QUERY, {"id": run_id})["ingestionRunAlreadySeen"]
+
     def heartbeat(self, run_id: str) -> bool:
+        """False when the worker must stop: the run was cancelled or is no longer RUNNING."""
         return self._execute(HEARTBEAT_MUTATION, {"id": run_id})["heartbeatIngestionRun"]
 
     def __len__(self) -> int:

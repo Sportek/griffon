@@ -4,7 +4,9 @@ The API owns the schedule (scrapeSchedules / triggerScrape) and queues runs; thi
 polls `claimIngestionRun`, runs the source with the run's params, streams listings into
 the run, keeps it alive with heartbeats and finishes it (FAILED with the reason if the
 source is blocked or crashes; SUCCEEDED without deactivating anything if the source lost
-too many pages, see polite.CrawlHealth). It only ever calls out to the API, so it can sit behind a
+too many pages, see polite.CrawlHealth). A heartbeat answered false (cancelIngestionRun) stops
+the source and finishes the run CANCELLED; a resumed run (resumeIngestionRun) skips the
+listings the interrupted one already sent. It only ever calls out to the API, so it can sit behind a
 home NAT (e.g. on a residential IP, which sites block far less than datacenter IPs).
 
     LISTINGS_API_URL=https://api.example/graphql LISTINGS_API_KEY=... python -m scraper.worker
@@ -32,7 +34,8 @@ from .api_sink import ApiError, ApiSink
 from .geo.config import ProximityConfig
 from .geo.enrich import Enricher
 from .main import NEVER_MARK_UNSEEN, SOURCES
-from .polite import PROGRESS, IncompleteCrawl, SourceBlocked
+from . import polite
+from .polite import PROGRESS, IncompleteCrawl, RunCancelled, SourceBlocked, check_cancelled
 
 log = sys.stderr
 
@@ -69,7 +72,9 @@ def _heartbeat(run_id: str, stop: threading.Event, every_s: float, report=None, 
     with ApiSink() as beat:
         while not stop.wait(every_s):
             try:
-                beat.heartbeat(run_id)
+                if not beat.heartbeat(run_id) and not polite.CANCEL.is_set():
+                    print(f"[worker] run {run_id} cancelled from the API, stopping", file=log, flush=True)
+                    polite.CANCEL.set()
             except Exception as e:  # noqa: BLE001 -- a missed beat is retried next time
                 print(f"[worker] heartbeat failed: {e!r}", file=log)
             if report and time.monotonic() >= next_report:
@@ -90,6 +95,14 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
     enricher = Enricher(ProximityConfig()) if params.get("enrich") else None
 
     PROGRESS.pop(source, None)
+    polite.CANCEL.clear()
+    polite.ALREADY_SENT.clear()
+    if run.get("resumeOf"):
+        try:
+            polite.ALREADY_SENT.update(sink.already_seen(run["id"]))
+        except Exception as e:  # noqa: BLE001 -- resuming from scratch is slower, not wrong
+            print(f"[worker] cannot load what run {run['resumeOf']} sent, starting over: {e!r}", file=log)
+        print(f"[worker] resuming run {run['resumeOf']}: {len(polite.ALREADY_SENT)} listings already sent, skipped", file=log)
     started = time.monotonic()
     seen = 0
 
@@ -110,6 +123,7 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
             if source not in SOURCES:
                 raise ValueError(f"unknown source {source!r}; this worker knows {', '.join(SOURCES)}")
             for listing in SOURCES[source](args):
+                check_cancelled()  # browser sources do not go through PoliteClient
                 seen += 1
                 if enricher:
                     enricher.enrich(listing)
@@ -123,12 +137,16 @@ def execute(sink: ApiSink, run: dict, *, heartbeat_s: float) -> None:
         print(f"[worker] {source} incomplete, no listing deactivated: {e}", file=log)
     except SourceBlocked as e:
         print(f"[worker] {source} stopped: {e}", file=log)
+    except RunCancelled:
+        print(f"[worker] {source} cancelled", file=log)
     except Stop:
         raise
     except Exception as e:  # noqa: BLE001 -- the run is already FAILED; keep the worker alive
         print(f"[worker] {source} failed: {e!r}", file=log)
     finally:
         stop.set()
+        polite.CANCEL.clear()
+        polite.ALREADY_SENT.clear()
     print(f"[worker] {source} done: {seen} listings", file=log)
     print(report(), file=log)
 

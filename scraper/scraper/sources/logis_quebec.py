@@ -26,7 +26,7 @@ import httpx
 from selectolax.parser import HTMLParser
 
 from ..models import Listing
-from ..polite import CrawlHealth, PoliteClient
+from ..polite import CrawlHealth, PoliteClient, already_sent
 from ..normalize import (
     clean_text,
     format_postal_code,
@@ -251,6 +251,8 @@ def scrape(
                     break
                 for external_id, url, type_slug in new_rows:
                     seen.add(external_id)
+                    if already_sent(external_id):
+                        continue
                     try:
                         resp = client.get(url)
                         resp.raise_for_status()

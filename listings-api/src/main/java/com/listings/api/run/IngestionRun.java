@@ -8,6 +8,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * One scraper execution for one source. Scheduled or manually triggered runs start
  * QUEUED until a worker claims them; runs started from the CLI start RUNNING.
+ *
+ * @param cancelRequested set by cancelIngestionRun on a RUNNING run: the worker learns it from
+ * its next heartbeat, stops and finishes the run CANCELLED
+ * @param resumeOf the FAILED or CANCELLED run this one picks up from (resumeIngestionRun)
+ * @param coverageSince start of the scrape this run belongs to: its own startedAt, or for a
+ * resumed run the one of the run it resumes. Listings seen since then count as seen by the run.
  */
 @Document(IngestionRun.COLLECTION)
 public record IngestionRun(
@@ -28,7 +34,10 @@ public record IngestionRun(
 		int unchanged,
 		int rejected,
 		int deactivated,
-		String error) {
+		String error,
+		boolean cancelRequested,
+		String resumeOf,
+		Instant coverageSince) {
 
 	public static final String COLLECTION = "ingestionRuns";
 
@@ -37,6 +46,13 @@ public record IngestionRun(
 	public static final String TRIGGER_SCHEDULE = "schedule";
 
 	public static final String TRIGGER_MANUAL = "manual";
+
+	public static final String TRIGGER_RESUME = "resume";
+
+	/** Since when the listings this run saw were seen: its own start, unless it resumes an earlier run. */
+	Instant seenSince() {
+		return (coverageSince != null) ? coverageSince : startedAt;
+	}
 
 	/** Last sign of life: batches and heartbeats both refresh lastBatchAt. */
 	Instant lastActivity() {
