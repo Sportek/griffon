@@ -8,6 +8,7 @@ import { Gallery, Location } from "@vibe/icons";
 
 import { loadGroup, loadListingSummary, loadPage } from "@/app/actions";
 import { single } from "@/lib/groups";
+import { usePanelListing } from "@/lib/panel";
 import { isSale, toQueryString, type SearchState } from "@/lib/search-params";
 import type { Suggestion } from "@/lib/suggest";
 import type { BoundingBox, FilterOptions, ListingGroup, ListingGroupPage, ListingSummary, MapPoint } from "@/lib/types";
@@ -161,6 +162,9 @@ export function SearchView({
   const showMap = idle && (isDesktop || view === "map");
   const showError = useCallback((message: string) => toast.show(message, "negative"), [toast]);
   const map = useMapPoints(state, idle && !error, showError);
+  // The listing open in the side panel: its card and its pin stay marked.
+  const openId = usePanelListing();
+  const openKey = openId ? (groups.find((g) => g.listings.some((l) => l.id === openId))?.key ?? openId) : null;
 
   // A new search from the server replaces the list (and the extra pages loaded so far).
   if (page !== lastPage) {
@@ -332,7 +336,7 @@ export function SearchView({
                   <SearchItem
                     group={group}
                     priority={index < PRIORITY_CARDS}
-                    highlighted={selected === group.key || hovered === group.key}
+                    highlighted={selected === group.key || hovered === group.key || openKey === group.key}
                     seenBefore={lastVisit}
                     onHover={setHovered}
                     onFavoriteChange={favoriteChanged}
@@ -355,7 +359,7 @@ export function SearchView({
           {showMap ? (
             <ListingsMap
               points={map.points}
-              activeId={hovered ?? selected}
+              activeId={hovered ?? openKey ?? selected}
               onSelect={select}
               onSearchArea={searchArea}
               loading={pending || !map.current}
@@ -372,7 +376,7 @@ export function SearchView({
         </section>
       </div>
 
-      <div className={styles.viewToggle}>
+      <div className={styles.viewToggle} hidden={openId != null}>
         {view === "list" ? (
           <Button leftIcon={Location} onClick={() => setView("map")}>
             Carte

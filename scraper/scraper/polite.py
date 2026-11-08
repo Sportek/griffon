@@ -27,6 +27,17 @@ import time
 
 import httpx
 
+# Live progress of the sources running in this process, read by the worker's progress log.
+# Per source: "requests" (counted by PoliteClient) and, when the source knows them,
+# "done"/"total" items (set with report_progress). Plain ints: safe to read from another thread.
+PROGRESS: dict[str, dict[str, int]] = {}
+
+
+def report_progress(source: str, done: int, total: int) -> None:
+    entry = PROGRESS.setdefault(source, {})
+    entry["done"], entry["total"] = done, total
+
+
 RETRYABLE = {429, 500, 502, 503, 504}
 BLOCKING = {403, 429}
 
@@ -132,6 +143,8 @@ class PoliteClient(httpx.Client):
                 raise SourceBlocked(f"{self.source}: request budget of {self.max_requests} spent")
             self._wait_turn()
             self.requests_sent += 1
+            entry = PROGRESS.setdefault(self.source, {})
+            entry["requests"] = entry.get("requests", 0) + 1
             try:
                 response = super().send(request, **kwargs)
             except httpx.TransportError as e:  # timeout, reset, DNS: usually gone a minute later

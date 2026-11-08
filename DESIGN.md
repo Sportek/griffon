@@ -254,6 +254,7 @@ Les étiquettes de la carte sont rendues par MapLibre en Noto Sans (Regular 11px
 - **Barre de filtres** : hauteur minimale `filters-height` (64px), champs de largeur fixe (132 / 168 / 224px, réduits à 152 / 196px sous 1279px), écart 8px. Sous 1023px elle défile horizontalement avec accroche (`scroll-snap`) au lieu de passer à la ligne.
 - **Recherche** : grille `list-width` + carte. La colonne de liste (fond `app-frame`, cartes espacées de 8px, en-tête de résultats collant) et la carte remplissent la hauteur restante. Sous 1023px : une seule colonne, liste ou carte, avec un sélecteur flottant Liste/Carte centré en bas (ombre large).
 - **Page d'annonce** : conteneur centré de 1200px max, `gutter` latéral.
+- **Panneau d'annonce** : une annonce ouverte depuis la recherche ou le suivi s'affiche dans un panneau à droite (`panel-width`, `clamp(420px, 40vw, 640px)`), sous la barre du haut, au-dessus de la page qui reste montée (la liste garde son défilement, la carte sa vue). Barre de 48px (« Page complète », fermer), contenu de la fiche sur une colonne (la fiche suit sa propre largeur par container queries). Sous 1023px, il couvre l'écran. Échap ou Retour le ferment.
 - **Suivi** : tableau à colonnes de 280px défilant horizontalement, écart 12px.
 - **Rythme** : l'échelle `--space-*` de Vibe (4, 8, 12, 16, 24 en usage courant, 32–64 pour les respirations d'états vides).
 - **Points de rupture** : 767px (téléphone), 1023px (tablette : la grille se replie), 1279px (resserrement des filtres) ; 599px ponctuellement dans les filtres avancés.
@@ -264,7 +265,7 @@ Le système est plat au repos : la profondeur vient des filets (`layout-border`)
 
 ### Shadow Vocabulary
 - **Petite** (`--box-shadow-small`) : survol ou mise en évidence d'une carte d'annonce, contrôles posés sur la carte (outils, zoom, légende).
-- **Moyenne** (`--box-shadow-medium`) : menus déroulants (sélecteur de statut), bouton « Rechercher dans cette zone », aperçu d'annonce sur la carte.
+- **Moyenne** (`--box-shadow-medium`) : menus déroulants (sélecteur de statut), bouton « Rechercher dans cette zone », aperçu d'annonce sur la carte, panneau d'annonce.
 - **Grande** (`--box-shadow-large`) : le sélecteur flottant Liste/Carte sur téléphone.
 
 ### Named Rules
@@ -304,6 +305,9 @@ Le bloc de statut monday : couleur pleine, libellé centré en 500, 4px de rayon
 
 ### Signals
 Pastilles de 20px, 12px en 600, texte blanc, 4px de rayon, écart 4px : « Nouveau », « −montant », « Retirée ». Une annonce retirée n'affiche que « Retirée ».
+
+### Photo Viewer
+Les photos en plein écran : la seule scène sombre de l'app, dans les deux thèmes (`#0b0c14` opaque), compteur et indication en blanc, boutons Vibe secondaires sur fond surface avec petite ombre, bande de vignettes 72×54px (56×42 sur téléphone, bordure `primary` de 2px sur la photo affichée). Clic pour zoomer (×2,5) là où l'on a cliqué, glisser pour se déplacer ; flèches, Début/Fin, Échap. S'ouvre d'un clic sur une photo de la galerie ou de son bouton plein écran.
 
 ### Map Pins
 Épingles de prix dessinées par MapLibre (couche de symboles sur image étirable, pas de DOM) : gélule de 24px de haut, prix abrégé (« 1,7 k$ ») en Noto Sans Bold. Par défaut fond surface, contour `ui-border` (en sombre : `dark-frame` / `dark-ui-border`), texte encre ; nouvelle annonce en `signal-new` plein, texte blanc ; annonce survolée en `primary` plein. Les grappes sont des cercles `primary` à 92 % d'opacité, contour surface de 2px, rayon croissant avec le nombre (16 → 32px), compte blanc. Les stations sont des points couleur de ligne (3 → 6px selon le zoom), contour surface, plus épais aux correspondances, nom en 11px avec halo surface. Les icônes de contrôle MapLibre sont inversées en thème sombre.

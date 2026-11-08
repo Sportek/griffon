@@ -1,0 +1,179 @@
+/* A photo viewer is the one dark stage of the app, in both themes: photos read best on black. */
+.viewer {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: #0b0c14;
+  color: #ffffff;
+  overscroll-behavior: contain;
+}
+
+.viewer:not([open]) {
+  display: none;
+}
+
+.viewer::backdrop {
+  background: transparent;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px
+    max(16px, env(safe-area-inset-left));
+}
+
+.counter {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint {
+  flex: 1;
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.button :global(button) {
+  background: var(--primary-background-color);
+  box-shadow: var(--box-shadow-small);
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+}
+
+.track {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Zoomed: the photo is moved around, not swiped away. */
+.track[data-zoomed] {
+  overflow-x: hidden;
+}
+
+.slide {
+  flex: 0 0 100%;
+  height: 100%;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.slide[data-zoomed] {
+  overflow: auto;
+  cursor: grab;
+}
+
+.slide[data-zoomed]:active {
+  cursor: grabbing;
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  cursor: zoom-in;
+  user-select: none;
+}
+
+.slide[data-zoomed] .photo {
+  cursor: inherit;
+}
+
+.prev,
+.next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.prev {
+  left: max(16px, env(safe-area-inset-left));
+}
+
+.next {
+  right: max(16px, env(safe-area-inset-right));
+}
+
+.strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  scrollbar-width: none;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 54px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-small);
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.08);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 70ms ease-out;
+}
+
+.thumb:hover {
+  opacity: 0.85;
+}
+
+.thumb[aria-current] {
+  border-color: var(--primary-color);
+  opacity: 1;
+}
+
+.thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* On a phone: swipe, no arrows, and a lighter top. */
+@media (max-width: 767px) {
+  .prev,
+  .next,
+  .hint {
+    display: none;
+  }
+
+  .thumb {
+    width: 56px;
+    height: 42px;
+  }
+}
+
+.top > .button {
+  margin-left: auto;
+}
+
+.track:focus {
+  outline: none;
+}

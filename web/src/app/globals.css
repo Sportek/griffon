@@ -22,6 +22,8 @@
   --header-height: 56px;
   --filters-height: 64px;
   --list-width: clamp(360px, 34vw, 480px);
+  /* The listing beside the search: the map keeps some room between the list and it. */
+  --panel-width: clamp(420px, 40vw, 640px);
   --gutter: 16px;
 }
 

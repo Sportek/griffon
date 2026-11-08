@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 
 import type { ListingSummary } from "@/lib/types";
 import { formatArea, formatBedrooms, formatPrice, formatRent, formatSize, isForSale, sourceName } from "@/lib/format";
@@ -8,6 +7,7 @@ import { FavoriteButton } from "./FavoriteButton";
 import { Signals } from "./Signals";
 import { StatusPill } from "./StatusPill";
 import styles from "./UnitList.module.css";
+import { ListingLink } from "./ListingLink";
 
 /** The size label of a row: the Québec "X ½" for a rent, bedrooms for a property for sale. */
 function sizeLabel(listing: ListingSummary): string {
@@ -38,14 +38,14 @@ export function UnitList({
     <ul className={styles.units}>
       {listings.map((listing) => (
         <li key={listing.id} className={styles.unit} data-inactive={!listing.active || undefined}>
-          <Link href={`/annonces/${listing.id}`} className={styles.link}>
+          <ListingLink id={listing.id} className={styles.link}>
             <span className={styles.size}>{sizeLabel(listing)}</span>
             <span className={styles.details}>
               {details(listing).filter(Boolean).join(" · ") || sourceName(listing.source)}
             </span>
             <span className={styles.price}>{formatRent(listing)}</span>
             {listing.address && <span className="visually-hidden">, {listing.address}</span>}
-          </Link>
+          </ListingLink>
           <span className={styles.aside}>
             <Signals listing={listing} seenBefore={seenBefore} />
             {listing.tracking?.status && <StatusPill status={listing.tracking.status} size="small" />}

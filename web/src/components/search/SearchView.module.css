@@ -133,3 +133,8 @@
     box-shadow: var(--box-shadow-large);
   }
 }
+
+/* A listing open in the side panel covers the screen below 1024px: the toggle would float over it. */
+.viewToggle[hidden] {
+  display: none !important;
+}
