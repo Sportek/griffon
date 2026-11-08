@@ -143,6 +143,22 @@ python -m scraper.api_sink data/listings.jsonl [--url http://localhost:8080/grap
 { ingestionRuns(limit: 10) { source status startedAt finishedAt received created rejected deactivated error } }
 ```
 
+### Langage de filtre (`filter.query`)
+
+`ListingFilter.query` accepte une requête façon JQL, combinée par ET aux autres critères (et enregistrée telle quelle dans les alertes) :
+
+```graphql
+{ listings(filter: { listingType: RENT, query: "(quartier ~ plateau ET prix <= 2000) OU (quartier = Rosemont ET prix <= 1700) NON meuble" }) {
+    totalElements } }
+```
+
+- **Combiner** : `ET`/`AND`, `OU`/`OR`, `NON`/`NOT`, parenthèses ; deux critères côte à côte valent ET ; NON passe avant ET, qui passe avant OU.
+- **Comparer** : `= != < <= > >=`, `~` (contient), `!~`, `DANS (a, b)` / `NON DANS (...)`.
+- **Champs** : prix, taille, chambres, sdb, superficie, metro, rem, transport, stationnement, annee, terrain, frais, logements, age (`age < 3j`), animaux, meuble, fumeur, photos, chauffe (oui/non : `animaux`, `NON meuble`, `animaux = non`), quartier, ville, inclus, commodite (clés normalisées), source, type, commerce, texte et adresse (`~` seulement, sans tenir compte des accents).
+- **Valeurs** : `1800`, `1800$`, `1.5k`, `4½`, `24h`, `3j`, `"avec des espaces"`. Majuscules et accents ignorés dans les noms.
+
+Une requête illisible répond `BAD_REQUEST` avec un message en français. L'analyseur est `ListingQuery` ; l'interface web en a un miroir (`web/src/lib/query-language.ts`) pour la coloration, les erreurs en direct et les suggestions. Les deux passent les cas de `src/test/resources/query-cases.json` (`./mvnw test`, `npm test` dans `web/`).
+
 ### Alertes
 
 ```graphql

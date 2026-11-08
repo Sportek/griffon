@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, ButtonGroup, Dropdown } from "@vibe/core";
-import { Filter, Notifications } from "@vibe/icons";
+import { Code, Filter, Notifications } from "@vibe/icons";
 
 import { formatPrice } from "@/lib/format";
 import { countAdvanced, isSale, SORTS, switchOffer, type SearchState } from "@/lib/search-params";
@@ -38,12 +38,16 @@ export function FilterBar({
   onChange,
   onOpenAdvanced,
   onSaveAlert,
+  queryOpen,
+  onToggleQuery,
 }: {
   state: SearchState;
   options: FilterOptions;
   onChange: (changes: Partial<SearchState>) => void;
   onOpenAdvanced: () => void;
   onSaveAlert: () => void;
+  queryOpen: boolean;
+  onToggleQuery: () => void;
 }) {
   const areas: Option<string>[] = options.neighborhoods.map((n) => ({ value: n, label: n }));
   const selectedAreas = areas.filter((a) => state.quartiers?.includes(a.value));
@@ -160,6 +164,17 @@ export function FilterBar({
       </div>
       <Button size="small" kind="secondary" leftIcon={Filter} onClick={onOpenAdvanced} className={styles.button}>
         {advanced ? `Filtres (${advanced})` : "Filtres"}
+      </Button>
+      <Button
+        size="small"
+        kind="secondary"
+        leftIcon={Code}
+        onClick={onToggleQuery}
+        active={queryOpen}
+        aria-expanded={queryOpen}
+        className={styles.button}
+      >
+        {state.requete ? "Requête (1)" : "Requête"}
       </Button>
       <div className={styles.spacer} />
       <div className={styles.field} data-size="m">

@@ -9,6 +9,8 @@ export interface SearchState {
   /** Properties for sale instead of rentals (the default). */
   offre?: "vente";
   q?: string;
+  /** A query in Griffon's filter language, on top of the other criteria. */
+  requete?: string;
   prixMin?: number;
   prixMax?: number;
   tailleMin?: number;
@@ -98,6 +100,7 @@ export function parseSearch(params: Params): SearchState {
   return {
     offre: read(params, "offre") === "vente" ? "vente" : undefined,
     q: read(params, "q")?.trim() || undefined,
+    requete: read(params, "requete")?.trim() || undefined,
     prixMin: num(read(params, "prix_min")),
     prixMax: num(read(params, "prix_max")),
     tailleMin: num(read(params, "taille_min")),
@@ -132,6 +135,7 @@ export function parseSearch(params: Params): SearchState {
 const KEYS: Record<keyof SearchState, string> = {
   offre: "offre",
   q: "q",
+  requete: "requete",
   prixMin: "prix_min",
   prixMax: "prix_max",
   tailleMin: "taille_min",
@@ -208,6 +212,7 @@ export function toFilter(state: SearchState, now = Date.now()): ListingFilter {
   return {
     listingType: sale ? "SALE" : "RENT",
     text: state.q,
+    query: state.requete,
     minPrice: state.prixMin,
     maxPrice: state.prixMax,
     minRoomsQc: sale ? undefined : state.tailleMin,
@@ -252,6 +257,7 @@ export function fromFilter(filter: ListingFilter): SearchState {
   return {
     offre: filter.listingType === "SALE" ? "vente" : undefined,
     q: filter.text ?? undefined,
+    requete: filter.query ?? undefined,
     prixMin: filter.minPrice ?? undefined,
     prixMax: filter.maxPrice ?? undefined,
     tailleMin: filter.minRoomsQc ?? undefined,

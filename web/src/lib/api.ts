@@ -197,7 +197,7 @@ const SAVED_SEARCH = `
     minAreaSqft minBathrooms minParkingSpots minYearBuilt minLotAreaSqft maxCondoFeesMonthly minUnits
     furnished petsAllowed smokingAllowed amenities
     utilitiesIncluded hasPhotos text active excludeDuplicates excludeHidden maxTransitWalkMinutes buildingKeys
-    nearbyCategories within { south west north east }
+    nearbyCategories within { south west north east } query
   }
 `;
 

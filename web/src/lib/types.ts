@@ -43,6 +43,8 @@ export interface ListingFilter {
   minLotAreaSqft?: number;
   maxCondoFeesMonthly?: number;
   minUnits?: number;
+  /** Griffon's filter language (lib/query-language.ts), ANDed with the other criteria. */
+  query?: string;
   furnished?: boolean;
   petsAllowed?: boolean;
   smokingAllowed?: boolean;

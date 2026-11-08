@@ -1,0 +1,361 @@
+.bar {
+  /* Under the filter bar's menus (10), over the list and the map: the completions open on them. */
+  position: relative;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px var(--gutter);
+  background: var(--primary-background-color);
+  border-bottom: 1px solid var(--layout-border-color);
+  /* Values in the query: one hue of their own, readable on both surfaces. */
+  --query-value: #7a2fb5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not(.light-app-theme)) .bar {
+    --query-value: #c89bf0;
+  }
+}
+
+:global(.dark-app-theme) .bar {
+  --query-value: #c89bf0;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.label {
+  flex-shrink: 0;
+  line-height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--secondary-text-color);
+}
+
+.editor {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* The mirror draws the coloured text; the textarea over it takes the typing, invisibly. */
+.mirror,
+.input {
+  margin: 0;
+  padding: 5px 10px;
+  font: 400 14px/20px var(--font-family);
+  letter-spacing: normal;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.mirror {
+  min-height: 32px;
+  border: 1px solid var(--ui-border-color);
+  border-radius: var(--border-radius-small);
+  background: var(--primary-background-color);
+  color: var(--primary-text-color);
+}
+
+.editor:focus-within .mirror {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.editor[data-invalid] .mirror {
+  border-color: var(--negative-color);
+}
+
+.editor[data-invalid]:focus-within .mirror {
+  box-shadow: 0 0 0 1px var(--negative-color);
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--primary-text-color);
+  resize: none;
+  overflow: hidden;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--secondary-text-color);
+}
+
+.input::selection {
+  background: var(--primary-selected-color);
+  color: transparent;
+}
+
+.mirror [data-role="field"] {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.mirror [data-role="keyword"] {
+  font-weight: 700;
+}
+
+.mirror [data-role="operator"],
+.mirror [data-role="paren"],
+.mirror [data-role="comma"] {
+  color: var(--secondary-text-color);
+  font-weight: 600;
+}
+
+.mirror [data-role="value"],
+.mirror [data-role="string"] {
+  color: var(--query-value);
+}
+
+.mirror [data-error] {
+  text-decoration: underline wavy var(--negative-color);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.menu {
+  position: absolute;
+  z-index: 1;
+  min-width: 240px;
+  max-width: min(440px, 100%);
+  max-height: 280px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--primary-background-color);
+  border: 1px solid var(--layout-border-color);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--box-shadow-medium);
+}
+
+.option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 10px;
+  border-radius: var(--border-radius-small);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.option[aria-selected="true"] {
+  background: var(--primary-selected-color);
+}
+
+.option[data-kind="field"] .optionLabel {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.option[data-kind="keyword"] .optionLabel,
+.option[data-kind="operator"] .optionLabel {
+  font-weight: 700;
+}
+
+.option[data-kind="value"] .optionLabel {
+  color: var(--query-value);
+}
+
+.optionDetail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding-left: 66px;
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.status > :global(svg) {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.status[data-state="ok"] > :global(svg) {
+  color: var(--positive-color);
+}
+
+.status[data-state="error"] {
+  color: var(--negative-color);
+}
+
+.warning {
+  margin-left: 8px;
+  color: var(--primary-text-color);
+}
+
+.help {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+  max-height: 42vh;
+  margin-top: 4px;
+  padding: 12px 0 4px 66px;
+  overflow-y: auto;
+  border-top: 1px solid var(--layout-border-color);
+  font-size: 13px;
+}
+
+.help h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.help h3 + * {
+  margin-top: 0;
+}
+
+.help section > h3:not(:first-child) {
+  margin-top: 16px;
+}
+
+.help code {
+  padding: 1px 5px;
+  border-radius: var(--border-radius-small);
+  background: var(--allgrey-background-color);
+  font: 600 12px/18px var(--font-family);
+  white-space: pre-wrap;
+}
+
+.examples,
+.fields,
+.operators {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2px 8px;
+}
+
+.examples button,
+.fields button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--border-radius-small);
+  background: none;
+  color: var(--primary-text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fields button {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+}
+
+.examples button:hover,
+.fields button:hover {
+  background: var(--allgrey-background-color);
+}
+
+.examples span,
+.fields span {
+  color: var(--secondary-text-color);
+}
+
+.fields li[data-off] {
+  opacity: 0.55;
+}
+
+.operators {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.grammar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.grammar dt {
+  white-space: nowrap;
+}
+
+.grammar dd {
+  margin: 0;
+  color: var(--secondary-text-color);
+}
+
+.note {
+  margin: 12px 0 0;
+  color: var(--secondary-text-color);
+  line-height: 1.6;
+}
+
+@media (max-width: 1023px) {
+  .help {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+
+  .status {
+    padding-left: 0;
+  }
+
+  .label {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .editor {
+    flex-basis: 100%;
+  }
+
+  .actions {
+    margin-left: auto;
+  }
+}

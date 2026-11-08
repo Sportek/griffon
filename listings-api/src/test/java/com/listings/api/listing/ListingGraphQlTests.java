@@ -108,6 +108,47 @@ class ListingGraphQlTests extends IntegrationTest {
 	}
 
 	@Test
+	void queryLanguageCombinesCriteriaWithOrAndNot() {
+		Map<String, Object> plateau = with(duproprio("1", "Montréal", 1750.0), "neighborhood", "Le Plateau-Mont-Royal",
+				"petsAllowed", true);
+		Map<String, Object> rosemont = with(duproprio("2", "Montréal", 1550.0), "neighborhood", "Rosemont", "furnished",
+				true);
+		Map<String, Object> expensive = with(duproprio("3", "Montréal", 1900.0), "neighborhood", "Rosemont");
+		upsert(List.of(plateau, rosemont, expensive));
+
+		String byArea = """
+				{ listings(filter: { query: "(quartier ~ plateau ET prix <= 1800) OU (quartier = rosemont ET prix <= 1600)" }) {
+				    content { externalId } } }""";
+		graphQl.document(byArea)
+			.execute()
+			.path("listings.content[*].externalId")
+			.entityList(String.class)
+			.satisfies(ids -> assertThat(ids).containsExactlyInAnyOrder("1", "2"));
+		// The query is ANDed with the regular criteria.
+		graphQl.document("{ listings(filter: { maxPrice: 1600, query: \"NON meublé\" }) { content { externalId } } }")
+			.execute()
+			.path("listings.content[*].externalId")
+			.entityList(String.class)
+			.hasSize(0);
+		graphQl.document("{ listings(filter: { query: \"animaux OU meublé\" }) { content { externalId } } }")
+			.execute()
+			.path("listings.content[*].externalId")
+			.entityList(String.class)
+			.satisfies(ids -> assertThat(ids).containsExactlyInAnyOrder("1", "2"));
+	}
+
+	@Test
+	void unreadableQueryIsABadRequestWithItsMessage() {
+		graphQl.document("{ listings(filter: { query: \"prix <= abc\" }) { totalElements } }")
+			.execute()
+			.errors()
+			.satisfy(errors -> assertThat(errors).singleElement().satisfies(e -> {
+				assertThat(e.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+				assertThat(e.getMessage()).contains("nombre");
+			}));
+	}
+
+	@Test
 	void textAndGeoFilters() {
 		Map<String, Object> plateau = new HashMap<>(duproprio("1", "Montréal", 1500.0));
 		plateau.put("latitude", 45.5225);
