@@ -313,6 +313,8 @@ def parse_article(html: str, *, group: str | None = None, now: datetime | None =
             if "comment_id=" in href and (found := parse_permalink(href))[1]:
                 post_group, post_id = found
                 break
+    if (hovered := (article.attributes.get(TIME_ATTR) or "").strip()) and (when := parse_timestamp(hovered, now)):
+        time_label, published = hovered, when  # the tooltip's full date beats a relative label
     if published is None and (abbr := next(iter(_own(article, "abbr[data-utime]")), None)):
         try:
             utime = int(abbr.attributes.get("data-utime") or "")
@@ -396,3 +398,25 @@ SEE_MORE_JS = """(labels) => {
 }"""
 
 SEE_MORE_SELECTOR = '[data-griffon-more="1"]'
+
+# The post's date is only shown in a tooltip of its timestamp link (a bare "?__cft__..." link
+# whose label is an obfuscated SVG). Marks the timestamp link of each undated feed unit so
+# Playwright can hover it; the tooltip text is then stored on the unit as data-griffon-time,
+# which parse_article reads back from the outer HTML.
+TIMESTAMP_MARK_JS = """() => {
+  const scope = document.querySelector('[role="feed"]') || document;
+  let n = 0;
+  for (const unit of scope.querySelectorAll('[aria-posinset]')) {
+    if (unit.dataset.griffonTime !== undefined || unit.dataset.griffonTimeTried) continue;
+    const link = [...unit.querySelectorAll('a[href]')].find(a =>
+      !a.closest('[role="article"]') && (a.getAttribute('href') || '').startsWith('?') && a.querySelector('svg, span'));
+    if (!link) continue;
+    unit.dataset.griffonTimeTried = '1';
+    link.dataset.griffonTs = '1';
+    n++;
+  }
+  return n;
+}"""
+
+TIMESTAMP_SELECTOR = '[data-griffon-ts="1"]'
+TIME_ATTR = "data-griffon-time"

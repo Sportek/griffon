@@ -183,3 +183,15 @@ def test_unit_post_without_photo_takes_its_id_from_a_comment_link(unit_posts):
 
 def test_unit_post_without_any_id_is_skipped(unit_posts):
     assert unit_posts[2] is None
+
+
+def test_unit_post_dated_from_the_hovered_tooltip():
+    html = split_articles(UNITS_FIXTURE.read_text(encoding="utf-8"))[0]
+    html = html.replace("<div aria-posinset=\"1\"", '<div data-griffon-time="Dimanche 8 novembre 2026 à 18:25" aria-posinset="1"', 1)
+    post = parse_article(html, group="242242325809377", now=NOW)
+    assert post.time_label == "Dimanche 8 novembre 2026 à 18:25"
+    assert post.published_at == "2026-11-08T23:25:00+00:00"
+
+
+def test_unit_post_without_tooltip_stays_undated(unit_posts):
+    assert unit_posts[0].published_at is None

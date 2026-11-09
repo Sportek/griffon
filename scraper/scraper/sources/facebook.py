@@ -40,6 +40,9 @@ from ..facebook.extract import (
     SEE_MORE_JS,
     SEE_MORE_LABELS,
     SEE_MORE_SELECTOR,
+    TIME_ATTR,
+    TIMESTAMP_MARK_JS,
+    TIMESTAMP_SELECTOR,
     Post,
     feed_url,
     parse_article,
@@ -140,6 +143,29 @@ def _expand_see_more(page, feed: str, max_clicks: int = 6) -> None:
         print(f"[facebook] 'See more' expansion failed: {e!r}", file=log)
 
 
+def _read_timestamps(page, max_hovers: int = 15) -> None:
+    """Hovers the timestamp link of the undated posts on screen: the tooltip holds the full date
+    ("Dimanche 8 novembre 2026 à 18:25") and is copied onto the post unit (TIME_ATTR)."""
+    try:
+        if not page.evaluate(TIMESTAMP_MARK_JS):
+            return
+        for handle in page.locator(TIMESTAMP_SELECTOR).element_handles()[:max_hovers]:
+            try:
+                handle.evaluate("e => e.removeAttribute('data-griffon-ts')")
+                handle.scroll_into_view_if_needed(timeout=3000)
+                handle.hover(timeout=3000)
+                tip = page.wait_for_selector('[role="tooltip"]', timeout=2500)
+                text = (tip.inner_text() or "").strip() if tip else ""
+                if text:
+                    handle.evaluate("(e, t) => e.closest('[aria-posinset]').setAttribute(%r, t)" % TIME_ATTR, text)
+            except Exception:  # noqa: BLE001 -- no tooltip or detached: the post stays undated
+                pass
+            page.mouse.move(random.randint(5, 40), random.randint(300, 600))
+            page.wait_for_timeout(random.randint(200, 600))
+    except Exception as e:  # noqa: BLE001
+        print(f"[facebook] reading post dates failed: {e!r}", file=log)
+
+
 def collect_group(page, context, group: str, store: Store, breaker: BlockBreaker, *, now: datetime, caps: Caps) -> list[Post]:
     oldest = (now - timedelta(days=caps.max_age_days)).isoformat()
 
@@ -151,8 +177,10 @@ def collect_group(page, context, group: str, store: Store, breaker: BlockBreaker
     posts: dict[str, Post] = {}
     already_seen: set[str] = set()
     too_old: set[str] = set()
+    reached: str | None = None  # oldest post date read so far
     for scroll in range(caps.max_scrolls):
         _expand_see_more(page, url)
+        _read_timestamps(page)
         articles = page.evaluate(FEED_ARTICLES_JS)
         if scroll == 0 and not articles:
             body = (page.inner_text("body") or "")[:5000].lower()
@@ -168,11 +196,13 @@ def collect_group(page, context, group: str, store: Store, breaker: BlockBreaker
                 if len(post.text) > len(posts[post.post_id].text):  # "See more" expanded since
                     posts[post.post_id] = post
                 continue
-            if store.seen(group, post.post_id):
-                already_seen.add(post.post_id)
-                continue
             if post.published_at and post.published_at < oldest:
                 too_old.add(post.post_id)
+                continue
+            if post.published_at:
+                reached = min(reached or post.published_at, post.published_at)
+            if store.seen(group, post.post_id):
+                already_seen.add(post.post_id)
                 continue
             posts[post.post_id] = post
         if len(already_seen) >= caps.stop_after_seen or len(too_old) >= 3 or len(posts) >= caps.max_posts:
@@ -180,7 +210,7 @@ def collect_group(page, context, group: str, store: Store, breaker: BlockBreaker
         _human_scroll(page)
         session.check_page(page.url, "", context.cookies())
     print(f"[facebook] {group}: {len(posts)} new posts ({scroll + 1} scrolls, "
-          f"{len(already_seen)} already seen, {len(too_old)} too old)", file=log)
+          f"{len(already_seen)} already seen, {len(too_old)} too old, back to {reached or '?'})", file=log)
     return list(posts.values())[: caps.max_posts]
 
 
@@ -272,8 +302,10 @@ def scrape(
     caps = Caps()
     if max_scrolls:
         # A run asking for more scrolls (maxPages, e.g. a catch-up) is not cut by the posts cap.
+        # It also digs past the posts seen by earlier runs, down to max_age_days.
         caps.max_scrolls = max_scrolls
-        caps.max_posts = max(caps.max_posts, max_scrolls)
+        caps.max_posts = max(caps.max_posts, 3 * max_scrolls)
+        caps.stop_after_seen = 10**9
     store = Store(_cache_path())
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
@@ -281,7 +313,9 @@ def scrape(
     try:
         collected = collect(keys, store, caps=caps, headless=headless)
         store.save()
-        classifier = Classifier(api_key) if api_key else None
+        # A catch-up classifies many more posts: ~1000 tokens per scroll (about $0.15 for 600).
+        budget = max(150_000, 1000 * max_scrolls) if max_scrolls else None
+        classifier = Classifier(api_key, token_budget=budget) if api_key else None
         try:
             yield from process(collected, store, classifier)
         finally:

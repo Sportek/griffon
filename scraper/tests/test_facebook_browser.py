@@ -10,6 +10,8 @@ from scraper.facebook.extract import (
     SEE_MORE_JS,
     SEE_MORE_LABELS,
     SEE_MORE_SELECTOR,
+    TIMESTAMP_MARK_JS,
+    TIMESTAMP_SELECTOR,
     parse_article,
     split_articles,
 )
@@ -68,3 +70,13 @@ def test_feed_units_js_matches_the_python_twin(units_page):
 
 def test_see_more_of_unit_posts_not_of_their_comments(units_page):
     assert units_page.evaluate(SEE_MORE_JS, sorted(SEE_MORE_LABELS)) == 1
+
+
+def test_timestamp_links_of_unit_posts_are_marked_once(browser):
+    page = browser.new_page()
+    page.set_content(UNITS_FIXTURE.read_text(encoding="utf-8"))
+    assert page.evaluate(TIMESTAMP_MARK_JS) == 2  # posts 1 and 2; post 3 has none, the comment's is ignored
+    hrefs = [h.get_attribute("href") for h in page.locator(TIMESTAMP_SELECTOR).element_handles()]
+    assert hrefs == ["?__cft__[0]=AZts", "?__cft__[0]=AZts"]
+    assert page.evaluate(TIMESTAMP_MARK_JS) == 0  # not hovered twice
+    page.close()
